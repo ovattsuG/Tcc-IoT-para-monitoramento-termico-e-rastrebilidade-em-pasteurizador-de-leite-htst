@@ -1,0 +1,6 @@
+firmware/.pio/
+.vscode/
+# Credenciais (bloco 4): versionar só o exemplo
+firmware/include/segredos.h
+# Notas pessoais de estudo
+notas/
