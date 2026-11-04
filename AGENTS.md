@@ -2,25 +2,26 @@
 
 Firmware do nó de borda ESP32 que monitora, de forma independente do CLP, um pasteurizador HTST de leite: temperatura de pasteurização e de saída (2× PT100 via MAX31865), posição da válvula de desvio (sensor indutivo) e pressão de ar (pressostato). O nó aciona uma torre de sinalização, grava em cartão SD e publica via MQTT. Este repositório é parte de um TCC de Engenharia de Software e segue desenvolvimento guiado por especificação (SDD).
 
-## Como trabalhar comigo (modo ensino)
+## Protocolo de colaboração com o agente
 
-Sou o Gustavo, estagiário de QA e formando em Engenharia de Software. Estou aprendendo C++/embarcados enquanto construo este firmware para o meu TCC (prazo: 17/11/2026). **O objetivo principal é eu entender e dominar o que está sendo feito.**
+Autor: Gustavo Correa A. Moreira (TCC de Engenharia de Software, entrega em 17/11/2026). O agente atua como **par de programação**: propõe, justifica e explica; o autor decide, executa, valida e responde pelo resultado. O critério de sucesso não é só o firmware funcionar, mas o autor dominar e saber defender cada decisão e cada linha de código.
 
 - Responda em português do Brasil, sem preâmbulo, resposta primeiro.
-- **Um passo por vez.** Explique o que vamos fazer e por quê, em poucas linhas; eu executo; espere eu confirmar o resultado antes do próximo passo.
-- **Não gere arquivos inteiros de uma vez** nem rode comandos por mim sem eu pedir. Mostre o trecho, explique cada parte não óbvia, e eu digito ou aprovo.
+- **Um passo por vez.** Explique o que será feito e por quê, em poucas linhas; o autor executa e confirma o resultado antes do próximo passo.
+- **Não gere arquivos inteiros de uma vez** nem execute comandos sem pedido do autor. Mostre o trecho, explique cada parte não óbvia; o autor digita ou aprova.
 - Antes de código: 2 ou 3 linhas com a decisão e a alternativa descartada. Diga o que quebraria em produção.
-- Se eu estiver errado, diga. Se faltar informação, pergunte. Não invente versão de biblioteca nem comportamento de API.
-- O projeto começa **do zero**: não há código ainda. Tudo é escrito comigo, passo a passo.
+- Se o autor estiver errado, diga. Se faltar informação, pergunte. Não invente versão de biblioteca nem comportamento de API.
+- Todo código é revisado e testado pelo autor antes do commit.
 
-## Estado atual (03/11/2026)
+## Estado atual (04/11/2026)
 
 - VS Code + PlatformIO instalados. ESP32 genérico **DevKit V1, 30 pinos** (perfil PlatformIO `esp32doit-devkit-v1`), USB **CH9102 na COM5**, driver ok.
 - Placas MAX31865 **ainda sem pinos soldados**: os testes de temperatura esperam a solda. Começar pelo que não precisa delas (projeto, Serial, entradas com jumper, testes no PC).
 - PT100 da sonda: provavelmente 3 fios (confirmar na fábrica). Bancada com resistor = 2 fios.
-- Decisões já tomadas: `docs/decisoes.md`. Plano: `docs/plano.md`. Crie `docs/tarefas.md` comigo quando começarmos o bloco 1.
+- Decisões: `docs/decisoes.md`. Plano: `docs/plano.md`. Tarefas do bloco atual: `docs/tarefas.md`.
 - 04/11/2026: projeto PlatformIO criado em `firmware/` (espressif32 7.1.3, `default_envs` = placa); "olá" na Serial validou placa, cabo e COM5. Abrir sempre pelo `edge-htst.code-workspace`.
-- **Próximo passo:** fase Tasks do bloco 1, criar `docs/tarefas.md` (FW-01, FW-02).
+- 04/11/2026: `docs/tarefas.md` do bloco 1 criado. Tarefa 1 concluída: `lib/debounce/` (100 ms, tempo passado de fora), 6/6 testes em `pio test -e native`.
+- **Próximo passo:** tarefa 2: ler `FDV` (GPIO 27) e `PRESS` (GPIO 26) por `Ticker` a cada 10 ms com o debounce, imprimir mudanças na Serial, criar `config.h`. Teste com jumper.
 
 ## Fonte da verdade
 
@@ -60,6 +61,7 @@ Blocos, nesta ordem:
 1. `docs/verificacao.md`: atualize a linha do FW-xx com status, data e evidência (o que foi testado e o resultado, ex.: trecho da Serial ou resultado do teste).
 2. `docs/decisoes.md`: se eu tomei alguma decisão, registre data, decisão, alternativa descartada e motivo.
 3. `notas/aprendizado.md`: acrescente, em linguagem simples, o que aprendi. Um título por conceito, 2 a 5 linhas: o que é, para que serve no projeto e onde fica.
+4. `notas/codigo/<modulo>.md` (um arquivo por módulo: `debounce.md`, `main.md`, ...): para cada arquivo de código novo ou alterado, uma seção com o código explicado linha a linha (comparando com Java quando ajudar), um fluxograma Mermaid da lógica e uma simulação "no papel" com valores concretos.
 
 ## Fechamento de bloco (quando eu escrever "fechar bloco N")
 
@@ -76,7 +78,7 @@ Blocos, nesta ordem:
 - **Trate os erros de verdade:** nenhum erro de periférico é ignorado em silêncio, e todo erro vira uma condição da seção 5 ou uma linha de log.
 - Os parâmetros da seção 4 da especificação são configuráveis sem recompilar.
 - Credenciais de Wi-Fi e broker nunca vão para o repositório (arquivo de configuração fora do Git, com um exemplo versionado).
-- Comente apenas o que não é óbvio pelo nome.
+- Comentários: no topo de cada arquivo, 1 a 3 linhas com o que ele faz e qual `FW-xx` atende; no corpo, só o **porquê** do que não é óbvio. A explicação didática fica em `notas/codigo/`, não no código.
 - **O firmware nunca comanda a válvula de desvio nem qualquer atuador do processo.** O único atuador é o relé `K1` da torre.
 
 ## Commits

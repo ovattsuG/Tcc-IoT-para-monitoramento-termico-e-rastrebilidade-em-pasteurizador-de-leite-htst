@@ -14,7 +14,7 @@ Status possíveis: Pendente · Implementado – aguardando bancada · Aprovado �
 | Req. | Critério de aceitação (resumo) | Cenário / procedimento | Status | Data | Resultado e evidência | Commit |
 |---|---|---|---|---|---|---|
 | FW-01 | Intervalo entre registros ≤ 1 s em 1 h | 1 h de bancada; análise do log da Serial (`dt`) e, no bloco 4, do CSV | Pendente | | | |
-| FW-02 | Pulso < 50 ms ignorado; mudança estável < 200 ms | Testes no PC (`test_debounce`, 6 casos) + pulsos pelo microcontrolador de teste no indutivo e no jumper | Pendente | | | |
+| FW-02 | Pulso < 50 ms ignorado; mudança estável < 200 ms | Testes no PC (`test_debounce`, 6 casos) + pulsos pelo microcontrolador de teste no indutivo e no jumper | Implementado – aguardando bancada | 04/11/2026 | PC: `pio test -e native` → 6/6 casos passando (base; pulso de 40 ms ignorado; fronteira de 100 ms; reconhecimento em 100 ms, < 200 ms; tremida a cada 10 ms ignorada; queda de 90 ms ignorada). Bancada com jumper pendente (tarefa 2) | |
 | FW-03 | Os 7 cenários dão o resultado esperado | Cenários 1 a 7 | Pendente | | | |
 | FW-04 | Torre em ≤ 2 s (descontado `T_FDV`) | Cenários 3, 4 e 5, com 30 repetições cada pelos relés de teste | Pendente | | | |
 | FW-05 | Sem alimentação: vermelho + sirene | Cortar a alimentação do nó | Pendente | | | |
