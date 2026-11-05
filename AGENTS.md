@@ -21,7 +21,8 @@ Autor: Gustavo Correa A. Moreira (TCC de Engenharia de Software, entrega em 17/1
 - Decisões: `docs/decisoes.md`. Plano: `docs/plano.md`. Tarefas do bloco atual: `docs/tarefas.md`.
 - 04/11/2026: projeto PlatformIO criado em `firmware/` (espressif32 7.1.3, `default_envs` = placa); "olá" na Serial validou placa, cabo e COM5. Abrir sempre pelo `edge-htst.code-workspace`.
 - 04/11/2026: `docs/tarefas.md` do bloco 1 criado. Tarefa 1 concluída: `lib/debounce/` (100 ms, tempo passado de fora), 6/6 testes em `pio test -e native`.
-- **Próximo passo:** tarefa 2: ler `FDV` (GPIO 27) e `PRESS` (GPIO 26) por `Ticker` a cada 10 ms com o debounce, imprimir mudanças na Serial, criar `config.h`. Teste com jumper.
+- 04/11/2026: tarefa 2 concluída: `config.h`, `main.cpp` com `Ticker` 10 ms + debounce em GPIO 26/27 (`INPUT_PULLUP`), mudanças na Serial; aprovado com jumper.
+- **Próximo passo:** tarefa 3 (`SensorPT100` com MAX31865), **bloqueada até soldar os pinos das placas MAX31865**.
 
 ## Fonte da verdade
 
