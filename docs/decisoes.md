@@ -20,6 +20,8 @@
 | 03/11/2026 | VS Code + PlatformIO, framework Arduino | Arduino IDE; ESP-IDF | Testes no PC e versões registradas (Arduino IDE não tem); ESP-IDF é mais trabalhoso para o prazo |
 | 03/11/2026 | Entradas amostradas por `Ticker` a cada 10 ms, filtro de 100 ms | Ler as entradas só no `loop()` | Cada leitura de PT100 bloqueia ~75 ms; no `loop()` a mudança poderia passar dos 200 ms do FW-02 |
 | 03/11/2026 | Bancada com resistor fixo em 2 fios; `FIOS_PT100` configurável | Fixar 3 fios no código | O resistor de teste tem 2 terminais; a sonda real provavelmente é de 3 fios (confirmar na fábrica) |
+| 05/11/2026 | `lib_ldf_mode = deep+` no ambiente da placa | Modo padrão `chain` com `SPI`/`Wire` em `lib_deps` | No `chain`, a Adafruit BusIO não encontrou `Wire.h` e o build falhou; com `deep+` compila. Custo: build um pouco mais lento |
+| 05/11/2026 | Registro periódico em grade fixa (`marca += PERIODO_REGISTRO`); no teste do FW-01, aceitar variação de poucos ms em torno de 1000 ms (tolerância provisória: `dt` ≤ 1010 ms, a confirmar com os dados de 1 h) | Reagendar a partir do instante real (`marca = millis()`); período menor que 1 s para garantir `dt` ≤ 1000 | Reagendar pelo instante real acumula atraso e deixa todo `dt` acima de 1 s; reduzir o período mudaria o valor da spec. Variação de ms é jitter de execução, não perda de registro. **Confirmado em 05/11/2026:** em 5,44 h o maior `dt` foi 1000 ms; a tolerância de 10 ms não precisou ser usada |
 
 ## Decisões em aberto (especificação, seção 8)
 

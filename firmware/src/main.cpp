@@ -1,11 +1,16 @@
 // FW-02: lê a válvula de desvio (FDV) e o pressostato (PRESS) a cada 10 ms,
 // filtra o ruído de contato e mostra na Serial cada mudança aceita.
+// FW-01: lê as temperaturas T1 e T2 (PT100 + MAX31865) e mostra na Serial.
 #include <Arduino.h>
 #include <Ticker.h>
 #include "config.h"
 #include "debounce.h"
+#include "temperatura.h"
 
 Ticker tickerEntradas;
+SensorPT100 sensorT1(PINO_CS_T1, FIOS_PT100);
+SensorPT100 sensorT2(PINO_CS_T2, FIOS_PT100);
+
 // Um filtro por entrada. Começam em 1: com pull-up, pino solto lê 1.
 Debounce filtroFdv(TEMPO_DEBOUNCE_MS, true);
 Debounce filtroPress(TEMPO_DEBOUNCE_MS, true);
@@ -26,11 +31,23 @@ void setup() {
   pinMode(PINO_FDV, INPUT_PULLUP);
   pinMode(PINO_PRESS, INPUT_PULLUP);
   tickerEntradas.attach_ms(PERIODO_AMOSTRA_MS, lerEntradas);
+
+  if (!sensorT1.iniciar()) {
+    Serial.println("T1: MAX31865 nao responde");
+  }
+  if (!sensorT2.iniciar()) {
+    Serial.println("T2: MAX31865 nao responde");
+  }
 }
 
 // Último valor impresso, para o loop() só escrever quando algo mudar.
 bool fdvAnterior = true;
 bool pressAnterior = true;
+
+// PERIODO_REGISTRO (spec, seção 4). Vira configurável sem recompilar no bloco 2.
+uint32_t periodoRegistroMs = 1000;
+uint32_t marcaMs = 0;            // marca da grade: 1000, 2000, 3000...
+uint32_t ultimoRegistroMs = 0;   // quando saiu a última linha, para o dt
 
 void loop() {
   // Foto dos valores: o Ticker pode trocá-los no meio deste trecho.
@@ -44,5 +61,17 @@ void loop() {
   if (pressAgora != pressAnterior) {
     Serial.printf("[%lu ms] PRESS: %d -> %d\n", millis(), pressAnterior, pressAgora);
     pressAnterior = pressAgora;
+  }
+
+  uint32_t agora = millis();
+  if (agora - marcaMs >= periodoRegistroMs) {
+    marcaMs += periodoRegistroMs;  // grade fixa: atraso não se acumula
+    uint32_t dt = agora - ultimoRegistroMs;
+    ultimoRegistroMs = agora;
+
+    LeituraTemperatura t1 = sensorT1.ler();
+    LeituraTemperatura t2 = sensorT2.ler();
+    Serial.printf("[%lu ms] dt=%lu | T1 = %.1f C  falha = 0x%02X | T2 = %.1f C  falha = 0x%02X\n",
+                  agora, dt, t1.celsius, t1.falha, t2.celsius, t2.falha);
   }
 }

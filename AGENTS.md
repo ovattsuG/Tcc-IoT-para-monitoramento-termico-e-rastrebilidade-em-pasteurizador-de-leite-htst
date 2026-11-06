@@ -22,7 +22,11 @@ Autor: Gustavo Correa A. Moreira (TCC de Engenharia de Software, entrega em 17/1
 - 04/11/2026: projeto PlatformIO criado em `firmware/` (espressif32 7.1.3, `default_envs` = placa); "olá" na Serial validou placa, cabo e COM5. Abrir sempre pelo `edge-htst.code-workspace`.
 - 04/11/2026: `docs/tarefas.md` do bloco 1 criado. Tarefa 1 concluída: `lib/debounce/` (100 ms, tempo passado de fora), 6/6 testes em `pio test -e native`.
 - 04/11/2026: tarefa 2 concluída: `config.h`, `main.cpp` com `Ticker` 10 ms + debounce em GPIO 26/27 (`INPUT_PULLUP`), mudanças na Serial; aprovado com jumper.
-- **Próximo passo:** tarefa 3 (`SensorPT100` com MAX31865), **bloqueada até soldar os pinos das placas MAX31865**.
+- 05/11/2026: tarefa 3 em andamento. Placa #1 soldada (pinos, bornes, jumpers 2/3 Wire e 2 Wire fechados = 2 fios; Rref 430 Ω), ligada em VSPI com CS 5. `lib_deps` com Adafruit MAX31865 1.6.2 e `lib_ldf_mode = deep+`. Teste de eco no `setup()` (temporário) passou: 0x1234/0x5678.
+- 05/11/2026: tarefa 3 concluída: `src/temperatura.*` (interface `SensorTemperatura` + `SensorPT100`, eco no `iniciar()`), T1 (CS 5) e T2 (CS 17) lidas a cada 1 s com 0,1 °C. Resistores de bancada medidos: 72, 109 e 215 Ω.
+- 05/11/2026: tarefa 4 concluída: registro em grade fixa (`periodoRegistroMs` = 1000, variável para o bloco 2) com `[agora] dt=` no log; dt = 1000 observado.
+- 05/11/2026: tarefa 5 concluída: 5,44 h de log (`firmware/logs/`), 19571 registros, `dt` = 1000 ms em todos, sem falha. FW-01 aprovado pela Serial.
+- **Próximo passo:** "fechar bloco 1". Pendente para o bloco 3: testar sensor aberto (bornes vazios).
 
 ## Fonte da verdade
 

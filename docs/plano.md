@@ -32,8 +32,9 @@ Regra: o que está em `lib/` não inclui `Arduino.h`. Assim roda no PC.
 
 | Biblioteca | Versão | Uso |
 |---|---|---|
-| Adafruit MAX31865 library | ^1.6.2 (conferida no repositório da Adafruit em 03/11/2026) | Leitura dos PT100 |
-| Adafruit BusIO | instalada automaticamente como dependência | SPI da biblioteca acima |
+| Adafruit MAX31865 library | ^1.6.2 (instalada 1.6.2 em 05/11/2026) | Leitura dos PT100 |
+| Adafruit BusIO | 1.17.4, instalada automaticamente como dependência | SPI da biblioteca acima |
+| SPI, Wire, Ticker | do núcleo ESP32 | Barramentos e temporizador; `Wire` também servirá ao DS3231 |
 | Plataforma espressif32 | 7.1.3 (fixada após o primeiro build, 04/11/2026) | Núcleo Arduino do ESP32 |
 
 ## Testes

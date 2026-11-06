@@ -10,3 +10,11 @@ constexpr uint8_t PINO_PRESS = 26;  // pressostato da linha de ar
 
 constexpr uint32_t PERIODO_AMOSTRA_MS = 10;   // de quanto em quanto tempo lê as entradas
 constexpr uint32_t TEMPO_DEBOUNCE_MS  = 100;  // FW-02: tempo parado para aceitar uma mudança
+
+constexpr uint8_t PINO_CS_T1 = 5;   // chip select da MAX31865 #1 (T1)
+constexpr uint8_t PINO_CS_T2 = 17;  // chip select da MAX31865 #2 (T2)
+
+constexpr uint8_t FIOS_PT100 = 2;                    // bancada: resistor de 2 fios (sonda real: provavelmente 3)
+constexpr float RESISTENCIA_NOMINAL_PT100 = 100.0f;  // PT100 = 100 ohms a 0 °C
+constexpr float RESISTENCIA_REF = 430.0f;            // resistor "431" da placa MAX31865
+
