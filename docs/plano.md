@@ -20,8 +20,7 @@ firmware/            projeto PlatformIO (platformio.ini aqui)
     temperatura.*      SensorPT100: MAX31865 atrás de uma interface simples
   lib/                 lógica pura, sem hardware (testada no PC)
     debounce/          FW-02: filtro das entradas discretas
-    validacao/         FW-07 (parte): classificação da leitura de temperatura
-    (bloco 2) alarme/  regras da seção 5 da especificação
+    alarme/            FW-03: regras da seção 5; inclui a classificação da leitura (FW-07, parte)
   test/                testes Unity, ambiente native
 spec/  docs/         na raiz
 ```
@@ -41,7 +40,7 @@ Regra: o que está em `lib/` não inclui `Arduino.h`. Assim roda no PC.
 
 | Onde | O quê |
 |---|---|
-| PC (`pio test -e native`) | Debounce e classificação da leitura; no bloco 2, todas as regras de alarme |
+| PC (`pio test -e native`) | Debounce; todas as regras de alarme, incluindo a classificação da leitura |
 | Bancada | Leitura com resistor, falha com fio aberto, entradas com jumper, 1 h de log (FW-01) |
 
 ## Pendências (perguntar, não supor)

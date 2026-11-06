@@ -26,6 +26,7 @@
 | 06/11/2026 | Um único estado de subtemperatura com histerese (entra com `T1 < T_MIN`, sai com `T1 ≥ T_MIN + HIST`), usado por `SUBTEMP` e `SUBTEMP_SEM_DESVIO`; com `T1` inválido, o estado fica no último valor | Histerese só no `SUBTEMP`; zerar a subtemperatura com `T1` inválido | A seção 4 fala de "a condição de subtemperatura" sem distinguir; o exemplo do CSV (seção 7) mostra `FALHA_T1\|SUBTEMP` com `T1` vazio. `FALHA_T1` já deixa a torre vermelha |
 | 06/11/2026 | Parâmetros da seção 4 guardados na NVS (`Preferences`) e alterados por comando na Serial | Arquivo de configuração no SD | O SD só entra no bloco 4; a spec aceita "cartão ou NVS". O arquivo no SD pode ser acrescentado depois |
 | 06/11/2026 | `BTN_LIMP` apertado durante o modo limpeza é ignorado; o modo termina só por `TEMPO_LIMPEZA` | Reiniciar o tempo a cada aperto; encerrar a limpeza no segundo aperto | Mais simples; impede estender a suspensão do alarme sem querer. A spec não define o caso |
+| 06/11/2026 | Classificação da leitura (falha do MAX31865 ou fora de `FAIXA_VALIDA`) e contagem de 2 seguidas dentro do `lib/alarme/`; o `Resultado` devolve `t1Valida`/`t2Valida` para o registro (bloco 4) | Módulo `lib/validacao/` separado (previsto no plano) | A regra é de uma linha e a contagem precisa de memória, que o `Alarme` já guarda; `FALHA_T1` é linha da seção 5. Devolver a validade evita que o CSV repita a regra |
 
 ## Decisões em aberto (especificação, seção 8)
 

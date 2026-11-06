@@ -2,11 +2,14 @@
 #include <unity.h>
 #include "alarme.h"
 
-// Valores da seção 4 da spec (T_FDV provisório: 5 s).
-const Parametros P{72.0f, 0.5f, 5000};
+// Valores da seção 4 da spec (T_FDV provisório: 5 s; FAIXA_VALIDA 0 a 105 °C).
+const Parametros P{72.0f, 0.5f, 5000, 0.0f, 105.0f};
+
+// Qualquer valor diferente de 0 no registrador de falhas do MAX31865.
+const uint8_t FALHA_CHIP = 0x80;
 
 // Leituras de "tudo normal"; cada teste muda só o que interessa.
-Entradas normal() { return {true, 75.0f, true, Fdv::DIRETO}; }
+Entradas normal() { return {true, 75.0f, 0, 33.0f, 0, Fdv::DIRETO}; }
 
 Entradas comT1(float t1, Fdv fdv) {
   Entradas e = normal();
@@ -92,7 +95,7 @@ void test_t1_invalido_mantem_subtemp() {
   Alarme alarme(P);
   alarme.avaliar(comT1(71.5f, Fdv::DESVIO), 0);
   Entradas e = comT1(0.0f, Fdv::DESVIO);
-  e.t1Valida = false;
+  e.t1Falha = FALHA_CHIP;   // 1 leitura inválida: congela, mas ainda não é FALHA_T1
   Resultado r = alarme.avaliar(e, 1000);
   TEST_ASSERT_EQUAL_UINT16(SUBTEMP, r.condicoes);
 }
@@ -120,6 +123,90 @@ void test_pressao_e_subtemp_sem_desvio_juntas() {
   TEST_ASSERT_TRUE(r.torreVermelha);
 }
 
+// ---------- Tarefa 3: FALHA_T1 e FALHA_T2 ----------
+
+// Uma leitura ruim sozinha não basta ("2 leituras seguidas")
+void test_uma_leitura_invalida_nao_gera_falha() {
+  Alarme alarme(P);
+  Entradas e = normal();
+  e.t1Falha = FALHA_CHIP;
+  Resultado r = alarme.avaliar(e, 0);
+  TEST_ASSERT_FALSE(r.t1Valida);
+  TEST_ASSERT_EQUAL_UINT16(0, r.condicoes);
+  TEST_ASSERT_FALSE(r.torreVermelha);
+}
+
+// Seção 5, linha FALHA_T1: sem T1 não há como verificar a pasteurização
+void test_duas_invalidas_seguidas_geram_falha_t1_vermelho() {
+  Alarme alarme(P);
+  Entradas e = normal();
+  e.t1Falha = FALHA_CHIP;
+  alarme.avaliar(e, 0);
+  Resultado r = alarme.avaliar(e, 1000);
+  TEST_ASSERT_EQUAL_UINT16(FALHA_T1, r.condicoes);
+  TEST_ASSERT_TRUE(r.torreVermelha);
+}
+
+// "Seguidas": uma leitura boa no meio zera a contagem
+void test_invalida_valida_invalida_nao_gera_falha() {
+  Alarme alarme(P);
+  Entradas ruim = normal();
+  ruim.t1Falha = FALHA_CHIP;
+  alarme.avaliar(ruim, 0);
+  alarme.avaliar(normal(), 1000);
+  Resultado r = alarme.avaliar(ruim, 2000);
+  TEST_ASSERT_EQUAL_UINT16(0, r.condicoes);
+}
+
+// FAIXA_VALIDA: acima de 105 °C conta como inválida mesmo sem falha do chip
+void test_fora_da_faixa_gera_falha_t1() {
+  Alarme alarme(P);
+  Entradas e = normal();
+  e.t1 = 105.1f;
+  alarme.avaliar(e, 0);
+  Resultado r = alarme.avaliar(e, 1000);
+  TEST_ASSERT_FALSE(r.t1Valida);
+  TEST_ASSERT_EQUAL_UINT16(FALHA_T1, r.condicoes);
+}
+
+// Fronteira da FAIXA_VALIDA: 0 e 105 °C ainda são válidos
+void test_limites_da_faixa_sao_validos() {
+  Alarme alarme(P);
+  Entradas e = normal();
+  e.t2 = 0.0f;
+  alarme.avaliar(e, 0);
+  Resultado r = alarme.avaliar(e, 1000);
+  TEST_ASSERT_TRUE(r.t2Valida);
+  e.t2 = 105.0f;
+  r = alarme.avaliar(e, 2000);
+  TEST_ASSERT_TRUE(r.t2Valida);
+  TEST_ASSERT_EQUAL_UINT16(0, r.condicoes);
+}
+
+// Seção 5, linha FALHA_T2: só registro, torre verde
+void test_falha_t2_e_verde() {
+  Alarme alarme(P);
+  Entradas e = normal();
+  e.t2Falha = FALHA_CHIP;
+  alarme.avaliar(e, 0);
+  Resultado r = alarme.avaliar(e, 1000);
+  TEST_ASSERT_EQUAL_UINT16(FALHA_T2, r.condicoes);
+  TEST_ASSERT_FALSE(r.torreVermelha);
+}
+
+// Retorno ao verde: sensor volta, falha termina (e a contagem não "dá a volta" com o tempo)
+void test_falha_t1_longa_termina_quando_sensor_volta() {
+  Alarme alarme(P);
+  Entradas e = normal();
+  e.t1Falha = FALHA_CHIP;
+  Resultado r{};
+  for (uint32_t i = 0; i < 300; i++) r = alarme.avaliar(e, i * 1000);
+  TEST_ASSERT_EQUAL_UINT16(FALHA_T1, r.condicoes);   // ainda em falha após 300 leituras
+  r = alarme.avaliar(normal(), 300000);
+  TEST_ASSERT_EQUAL_UINT16(0, r.condicoes);
+  TEST_ASSERT_FALSE(r.torreVermelha);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_tudo_normal_e_ok_verde);
@@ -132,5 +219,12 @@ int main() {
   RUN_TEST(test_t1_invalido_mantem_subtemp);
   RUN_TEST(test_voltar_a_direto_reinicia_cronometro);
   RUN_TEST(test_pressao_e_subtemp_sem_desvio_juntas);
+  RUN_TEST(test_uma_leitura_invalida_nao_gera_falha);
+  RUN_TEST(test_duas_invalidas_seguidas_geram_falha_t1_vermelho);
+  RUN_TEST(test_invalida_valida_invalida_nao_gera_falha);
+  RUN_TEST(test_fora_da_faixa_gera_falha_t1);
+  RUN_TEST(test_limites_da_faixa_sao_validos);
+  RUN_TEST(test_falha_t2_e_verde);
+  RUN_TEST(test_falha_t1_longa_termina_quando_sensor_volta);
   return UNITY_END();
 }
