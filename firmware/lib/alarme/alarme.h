@@ -1,5 +1,5 @@
 // Regras de alarme da seção 5 da spec: recebe leituras e tempo, devolve condições ativas e cor da torre.
-// FW-03 (e a classificação da leitura do FW-07). Lógica pura: não inclui Arduino.h, roda e é testada no PC.
+// FW-03, FW-06 (modo limpeza) e a classificação da leitura do FW-07. Lógica pura: não inclui Arduino.h, roda e é testada no PC.
 // Chamar avaliar() uma vez por ciclo de leitura: a contagem de "2 leituras seguidas" depende disso.
 #pragma once
 #include <stdint.h>
@@ -22,6 +22,7 @@ struct Parametros {
   uint32_t tFdvMs;   // T_FDV
   float faixaMinC;   // FAIXA_VALIDA, limite de baixo
   float faixaMaxC;   // FAIXA_VALIDA, limite de cima
+  uint32_t tempoLimpezaMs;  // TEMPO_LIMPEZA
 };
 
 struct Entradas {
@@ -31,6 +32,7 @@ struct Entradas {
   float t2;
   uint8_t t2Falha;  // registrador de falhas do MAX31865 #2
   Fdv fdv;          // já traduzido do pino (D1)
+  bool botaoLimpeza;  // BTN_LIMP já filtrado: true = apertado
 };
 
 struct Resultado {
@@ -38,6 +40,7 @@ struct Resultado {
   bool torreVermelha;
   bool t1Valida;        // o registro (bloco 4) usa estes, para não repetir a regra
   bool t2Valida;
+  bool modoLimpeza;     // false = modo produção
 };
 
 class Alarme {
@@ -53,4 +56,7 @@ private:
   uint32_t diretoDesdeMs_ = 0;
   uint8_t invalidasT1_ = 0;   // leituras inválidas seguidas
   uint8_t invalidasT2_ = 0;
+  bool limpeza_ = false;
+  bool botaoAnterior_ = false;   // para perceber o aperto (solto → apertado)
+  uint32_t limpezaDesdeMs_ = 0;
 };

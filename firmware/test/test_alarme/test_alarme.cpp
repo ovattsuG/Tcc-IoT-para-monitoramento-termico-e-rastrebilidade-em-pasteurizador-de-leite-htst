@@ -2,14 +2,15 @@
 #include <unity.h>
 #include "alarme.h"
 
-// Valores da seção 4 da spec (T_FDV provisório: 5 s; FAIXA_VALIDA 0 a 105 °C).
-const Parametros P{72.0f, 0.5f, 5000, 0.0f, 105.0f};
+// Valores da seção 4 da spec (T_FDV provisório: 5 s; FAIXA_VALIDA 0 a 105 °C; TEMPO_LIMPEZA provisório: 4 h).
+const uint32_t QUATRO_HORAS_MS = 4UL * 60 * 60 * 1000;
+const Parametros P{72.0f, 0.5f, 5000, 0.0f, 105.0f, QUATRO_HORAS_MS};
 
 // Qualquer valor diferente de 0 no registrador de falhas do MAX31865.
 const uint8_t FALHA_CHIP = 0x80;
 
 // Leituras de "tudo normal"; cada teste muda só o que interessa.
-Entradas normal() { return {true, 75.0f, 0, 33.0f, 0, Fdv::DIRETO}; }
+Entradas normal() { return {true, 75.0f, 0, 33.0f, 0, Fdv::DIRETO, false}; }
 
 Entradas comT1(float t1, Fdv fdv) {
   Entradas e = normal();
@@ -207,6 +208,90 @@ void test_falha_t1_longa_termina_quando_sensor_volta() {
   TEST_ASSERT_FALSE(r.torreVermelha);
 }
 
+// ---------- Tarefa 4: modo limpeza (FW-06) ----------
+
+// Aperta e solta o BTN_LIMP no instante dado.
+void apertar(Alarme& alarme, uint32_t agoraMs) {
+  Entradas e = normal();
+  e.botaoLimpeza = true;
+  alarme.avaliar(e, agoraMs);
+}
+
+void test_aperto_entra_em_limpeza() {
+  Alarme alarme(P);
+  TEST_ASSERT_FALSE(alarme.avaliar(normal(), 0).modoLimpeza);
+  apertar(alarme, 1000);
+  TEST_ASSERT_TRUE(alarme.avaliar(normal(), 2000).modoLimpeza);
+}
+
+// FW-06: em limpeza, o cenário 3 (frio com FDV direto) não aciona a torre
+void test_limpeza_suspende_subtemp_sem_desvio() {
+  Alarme alarme(P);
+  apertar(alarme, 0);
+  alarme.avaliar(comT1(71.5f, Fdv::DIRETO), 1000);
+  Resultado r = alarme.avaliar(comT1(71.5f, Fdv::DIRETO), 10000);
+  TEST_ASSERT_TRUE(r.modoLimpeza);
+  TEST_ASSERT_EQUAL_UINT16(0, r.condicoes);
+  TEST_ASSERT_FALSE(r.torreVermelha);
+}
+
+// FW-06: em limpeza, o cenário 4 (perda de ar) continua acionando
+void test_limpeza_nao_suspende_pressao() {
+  Alarme alarme(P);
+  apertar(alarme, 0);
+  Entradas e = normal();
+  e.pressaoOk = false;
+  Resultado r = alarme.avaliar(e, 1000);
+  TEST_ASSERT_EQUAL_UINT16(PRESSAO, r.condicoes);
+  TEST_ASSERT_TRUE(r.torreVermelha);
+}
+
+// Seção 5: FALHA_T1 continua ativa em limpeza
+void test_limpeza_nao_suspende_falha_t1() {
+  Alarme alarme(P);
+  apertar(alarme, 0);
+  Entradas e = normal();
+  e.t1Falha = FALHA_CHIP;
+  alarme.avaliar(e, 1000);
+  Resultado r = alarme.avaliar(e, 2000);
+  TEST_ASSERT_EQUAL_UINT16(FALHA_T1, r.condicoes);
+  TEST_ASSERT_TRUE(r.torreVermelha);
+}
+
+// FW-06: depois de TEMPO_LIMPEZA volta sozinho à produção e o cenário 3 aciona na hora
+void test_limpeza_expira_e_subtemp_volta() {
+  Alarme alarme(P);
+  apertar(alarme, 0);
+  alarme.avaliar(comT1(71.5f, Fdv::DIRETO), 1000);
+  Resultado r = alarme.avaliar(comT1(71.5f, Fdv::DIRETO), QUATRO_HORAS_MS - 1);
+  TEST_ASSERT_TRUE(r.modoLimpeza);
+  TEST_ASSERT_FALSE(r.torreVermelha);
+  r = alarme.avaliar(comT1(71.5f, Fdv::DIRETO), QUATRO_HORAS_MS);
+  TEST_ASSERT_FALSE(r.modoLimpeza);
+  TEST_ASSERT_EQUAL_UINT16(SUBTEMP_SEM_DESVIO, r.condicoes);
+  TEST_ASSERT_TRUE(r.torreVermelha);
+}
+
+// Decisão de 06/11/2026: apertar de novo durante a limpeza não estende o tempo
+void test_aperto_durante_limpeza_e_ignorado() {
+  Alarme alarme(P);
+  apertar(alarme, 0);
+  alarme.avaliar(normal(), 1000);
+  apertar(alarme, QUATRO_HORAS_MS / 2);
+  alarme.avaliar(normal(), QUATRO_HORAS_MS / 2 + 1000);
+  TEST_ASSERT_FALSE(alarme.avaliar(normal(), QUATRO_HORAS_MS).modoLimpeza);
+}
+
+// Botão preso apertado: entra uma vez só; quando expira, não volta sozinho
+void test_botao_segurado_nao_reentra_em_limpeza() {
+  Alarme alarme(P);
+  Entradas e = normal();
+  e.botaoLimpeza = true;
+  alarme.avaliar(e, 0);
+  TEST_ASSERT_FALSE(alarme.avaliar(e, QUATRO_HORAS_MS).modoLimpeza);
+  TEST_ASSERT_FALSE(alarme.avaliar(e, QUATRO_HORAS_MS + 1000).modoLimpeza);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_tudo_normal_e_ok_verde);
@@ -226,5 +311,12 @@ int main() {
   RUN_TEST(test_limites_da_faixa_sao_validos);
   RUN_TEST(test_falha_t2_e_verde);
   RUN_TEST(test_falha_t1_longa_termina_quando_sensor_volta);
+  RUN_TEST(test_aperto_entra_em_limpeza);
+  RUN_TEST(test_limpeza_suspende_subtemp_sem_desvio);
+  RUN_TEST(test_limpeza_nao_suspende_pressao);
+  RUN_TEST(test_limpeza_nao_suspende_falha_t1);
+  RUN_TEST(test_limpeza_expira_e_subtemp_volta);
+  RUN_TEST(test_aperto_durante_limpeza_e_ignorado);
+  RUN_TEST(test_botao_segurado_nao_reentra_em_limpeza);
   return UNITY_END();
 }

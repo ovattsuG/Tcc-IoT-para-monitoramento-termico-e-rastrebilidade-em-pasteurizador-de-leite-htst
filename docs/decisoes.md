@@ -27,6 +27,7 @@
 | 06/11/2026 | Parâmetros da seção 4 guardados na NVS (`Preferences`) e alterados por comando na Serial | Arquivo de configuração no SD | O SD só entra no bloco 4; a spec aceita "cartão ou NVS". O arquivo no SD pode ser acrescentado depois |
 | 06/11/2026 | `BTN_LIMP` apertado durante o modo limpeza é ignorado; o modo termina só por `TEMPO_LIMPEZA` | Reiniciar o tempo a cada aperto; encerrar a limpeza no segundo aperto | Mais simples; impede estender a suspensão do alarme sem querer. A spec não define o caso |
 | 06/11/2026 | Classificação da leitura (falha do MAX31865 ou fora de `FAIXA_VALIDA`) e contagem de 2 seguidas dentro do `lib/alarme/`; o `Resultado` devolve `t1Valida`/`t2Valida` para o registro (bloco 4) | Módulo `lib/validacao/` separado (previsto no plano) | A regra é de uma linha e a contagem precisa de memória, que o `Alarme` já guarda; `FALHA_T1` é linha da seção 5. Devolver a validade evita que o CSV repita a regra |
+| 06/11/2026 | `BTN_LIMP` como botão de pulso com expiração (como na spec); o cronômetro do `T_FDV` continua durante a limpeza, e ao expirar o `SUBTEMP_SEM_DESVIO` vem na hora se a situação persistir | Chave liga/desliga (limpeza enquanto ligada); zerar o cronômetro ao sair da limpeza | Uma chave esquecida desligaria o alarme principal para sempre e mudaria o FW-06. Continuar contando é o lado seguro: o leite já está frio com a FDV direto há mais de `T_FDV` |
 
 ## Decisões em aberto (especificação, seção 8)
 
