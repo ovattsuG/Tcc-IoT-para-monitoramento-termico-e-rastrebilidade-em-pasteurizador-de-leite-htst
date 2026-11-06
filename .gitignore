@@ -7,3 +7,5 @@ notas/
 # Logs da Serial: só o do teste de 5,4 h do FW-01 (tarefa 5) é evidência versionada
 firmware/logs/*
 !firmware/logs/device-monitor-261105-025347.log
+# Log criado por engano ao rodar o monitor fora de firmware/
+/logs/

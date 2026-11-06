@@ -26,7 +26,8 @@ Autor: Gustavo Correa A. Moreira (TCC de Engenharia de Software, entrega em 17/1
 - 05/11/2026: tarefa 3 concluída: `src/temperatura.*` (interface `SensorTemperatura` + `SensorPT100`, eco no `iniciar()`), T1 (CS 5) e T2 (CS 17) lidas a cada 1 s com 0,1 °C. Resistores de bancada medidos: 72, 109 e 215 Ω.
 - 05/11/2026: tarefa 4 concluída: registro em grade fixa (`periodoRegistroMs` = 1000, variável para o bloco 2) com `[agora] dt=` no log; dt = 1000 observado.
 - 05/11/2026: tarefa 5 concluída: 5,44 h de log (`firmware/logs/`), 19571 registros, `dt` = 1000 ms em todos, sem falha. FW-01 aprovado pela Serial.
-- **Próximo passo:** "fechar bloco 1". Pendente para o bloco 3: testar sensor aberto (bornes vazios).
+- 05/11/2026: bloco 1 fechado (`docs/fluxograma.md` criado). FW-02 segue aguardando o teste de pulsos < 50 ms com microcontrolador de teste.
+- **Próximo passo:** bloco 2: etapa Tasks (`docs/tarefas.md` do bloco 2) para FW-03 a FW-06. Pendente para o bloco 3: testar sensor aberto (bornes vazios).
 
 ## Fonte da verdade
 
