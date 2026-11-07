@@ -190,11 +190,13 @@ void loop() {
     if (formatarCsv(reg, linha, sizeof(linha)) == 0) {
       Serial.println("registro: linha nao coube; nada gravado");
     } else {
-      if (!enfileirarLinhaSd(hora, linha)) Serial.println("SD: fila cheia; linha descartada");   // FW-09 / FW-12
-      // FW-10: ao vivo, só com o broker conectado; sem conexão a linha fica no SD (reenvio: tarefa 6).
+      // FW-10 / FW-11: a tarefa do SD grava o CSV e decide entre publicar ao vivo e guardar como pendência.
       char json[320];
-      if (formatarJson(reg, DEVICE_ID, json, sizeof(json)) > 0) publicarRegistro(json);
-      else Serial.println("registro: JSON nao coube; nada enviado");
+      if (formatarJson(reg, DEVICE_ID, json, sizeof(json)) == 0) {
+        Serial.println("registro: JSON nao coube; so o CSV");
+        json[0] = ' ';
+      }
+      if (!enfileirarLinhaSd(hora, linha, json)) Serial.println("SD: fila cheia; linha descartada");   // FW-09 / FW-12
       Serial.printf("[%lu ms] dt=%lu falha1=0x%02X falha2=0x%02X | %s\n", agora, dt, t1.falha, t2.falha, linha);
     }
   }

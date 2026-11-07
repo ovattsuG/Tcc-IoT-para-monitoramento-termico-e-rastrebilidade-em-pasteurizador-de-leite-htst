@@ -33,6 +33,7 @@ void carregarConfiguracao(Configuracao& cfg) {
 }
 
 static const char* CHAVE_SEQ = "seq";
+static const char* CHAVE_ENVIO = "envio";
 
 uint32_t carregarReservaSeq() {
   Preferences prefs;
@@ -49,6 +50,25 @@ bool salvarReservaSeq(uint32_t reserva) {
   Preferences prefs;
   if (!prefs.begin(ESPACO, false)) return false;
   bool ok = prefs.putUInt(CHAVE_SEQ, reserva) == sizeof(reserva);
+  prefs.end();
+  return ok;
+}
+
+uint32_t carregarPosicaoEnvio() {
+  Preferences prefs;
+  if (!prefs.begin(ESPACO, false)) {
+    Serial.println("MQTT: erro ao abrir a NVS; reenvio comeca do inicio das pendencias");
+    return 0;
+  }
+  uint32_t posicao = prefs.getUInt(CHAVE_ENVIO, 0);
+  prefs.end();
+  return posicao;
+}
+
+bool salvarPosicaoEnvio(uint32_t posicao) {
+  Preferences prefs;
+  if (!prefs.begin(ESPACO, false)) return false;
+  bool ok = prefs.putUInt(CHAVE_ENVIO, posicao) == sizeof(posicao);
   prefs.end();
   return ok;
 }

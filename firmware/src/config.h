@@ -35,3 +35,6 @@ constexpr uint8_t FIOS_PT100 = 2;                    // bancada: resistor de 2 f
 constexpr float RESISTENCIA_NOMINAL_PT100 = 100.0f;  // PT100 = 100 ohms a 0 °C
 constexpr float RESISTENCIA_REF = 430.0f;            // resistor "431" da placa MAX31865
 
+// FW-11: reenvio das pendências (detalhe interno, Anexo A).
+constexpr uint32_t TEMPO_PUBACK_MS = 10000;           // sem PUBACK nesse tempo, reenvia a mesma linha
+constexpr uint32_t PERIODO_GRAVA_POSICAO_MS = 60000;  // poupa a flash; após reinício reenvia no máximo ~60 s

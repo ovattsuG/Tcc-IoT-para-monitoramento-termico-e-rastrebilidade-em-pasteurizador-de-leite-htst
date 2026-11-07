@@ -11,3 +11,7 @@ bool salvarConfiguracao(const Configuracao& cfg);
 // FW-10: fim da reserva de "seq" (ver lib/sequencia). 0 se nada gravado ou a NVS falhou (com log).
 uint32_t carregarReservaSeq();
 bool salvarReservaSeq(uint32_t reserva);
+
+// FW-11: bytes de /PENDENTES.txt já confirmados pelo broker. 0 se nada gravado ou a NVS falhou (com log).
+uint32_t carregarPosicaoEnvio();
+bool salvarPosicaoEnvio(uint32_t posicao);
