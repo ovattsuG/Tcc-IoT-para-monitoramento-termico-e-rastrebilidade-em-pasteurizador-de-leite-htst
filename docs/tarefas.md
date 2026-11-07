@@ -2,6 +2,24 @@
 
 Status: Pendente · Em andamento · Implementado – aguardando bancada · Concluída
 
+## Bloco 3 (FW-07, FW-08: falha de sensor e hora)
+
+Data: 06/11/2026 · Base: `spec/FRS_Edge-HTST_v1.5.md`, seções 5, 6 e 7 e Anexo A
+
+Princípio: a regra de falha já está em `lib/alarme/` (bloco 2, tarefa 3). Aqui falta o lado do registro e a prova na bancada. A hora entra atrás de uma interface simples; a formatação ISO 8601 é lógica pura, testada no PC.
+
+| # | Tarefa | Req. | Depende de | Critério de conclusão | Status |
+|---|---|---|---|---|---|
+| 1 | Leitura inválida registrada **sem valor**: no registro, T1/T2 vazios quando `t1Valida`/`t2Valida` = 0, mais as colunas de validade (como na seção 7) | FW-07 | Bloco 2 | Serial: com T2 em 319 °C, o campo de T2 sai vazio e `t2_valida=0` | Concluída (06/11/2026) |
+| 2 | Bancada FW-07: PT100 aberto (bornes vazios) e em curto (jumper nos bornes), em T1 e em T2 | FW-07 | 1 | `FALHA_T1`/`FALHA_T2` em até 2 leituras; T1 → torre vermelha, T2 → verde; ao recolocar o resistor, volta | Concluída (06/11/2026) |
+| 3 | `lib/hora/`: segundos UTC → texto ISO 8601 (`2026-11-02T13:05:01Z`), lógica pura | FW-08 | PC | Testes no PC: data comum, virada de dia, de mês, de ano e 29/02 | Cancelada (07/11/2026: a RTClib já formata ISO 8601; ver `decisoes.md`) |
+| 4 | RTC DS3231 (I2C: SDA 21, SCL 22) atrás de uma interface (`agoraUtc()`); hora no início de cada registro; erro do RTC vira linha de log | FW-08 | 3, módulo DS3231 | Serial mostra a hora do RTC em ISO 8601; ela continua certa depois de desligar e ligar (bateria) | Concluída (07/11/2026) |
+| 5 | Wi-Fi + NTP sem bloquear o loop: credenciais em `segredos.h` (fora do Git, com exemplo versionado); quando houver rede, ajusta o RTC em UTC | FW-08 | 4 | Partir sem rede → hora vem do RTC; com rede → RTC ajustado (linha de log); torre não atrasa durante a conexão | Concluída (07/11/2026) |
+
+### Pendências do bloco 3 (perguntar, não supor)
+- Tem o módulo DS3231 com bateria (CR2032)? E Wi-Fi 2,4 GHz na bancada?
+- A seção 5 não tem condição para falha do RTC. Proposta: só linha de log agora; decidir no FW-14 (bloco 5) se vira condição.
+
 ## Bloco 2 (FW-03, FW-04, FW-05, FW-06: regras de alarme, relé e modo limpeza)
 
 Data: 06/11/2026 · Base: `spec/FRS_Edge-HTST_v1.5.md`, seções 3 a 6

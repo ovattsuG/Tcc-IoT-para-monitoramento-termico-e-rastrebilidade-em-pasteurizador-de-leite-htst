@@ -11,12 +11,23 @@
 #include "parametros_nvs.h"
 #include "comandos_serial.h"
 #include "alarme.h"
+#include <RTClib.h>
+#include <WiFi.h>
+#include <esp_sntp.h>
+#include "segredos.h"   // fora do Git; modelo em include/segredos.exemplo.h
 
 Ticker tickerEntradas;
 Configuracao cfg = configuracaoPadrao();
 SensorPT100 sensorT1(PINO_CS_T1, FIOS_PT100);
 SensorPT100 sensorT2(PINO_CS_T2, FIOS_PT100);
 Alarme alarme(cfg.alarme);
+RTC_DS3231 rtc;
+bool rtcPresente = false;
+bool horaOk = false;   // FW-08: false = RTC não responde ou perdeu a hora; o registro sai sem hora
+
+// FW-08: o SNTP chama isto na tarefa de rede, não no loop(); por isso só marca, e o loop() grava no RTC.
+volatile bool ntpSincronizou = false;
+void aoSincronizarNtp(struct timeval*) { ntpSincronizou = true; }
 
 // Um filtro por entrada. Começam em 1: com pull-up, pino solto lê 1.
 Debounce filtroFdv(TEMPO_DEBOUNCE_MS, true);
@@ -56,6 +67,21 @@ void setup() {
   if (!sensorT2.iniciar()) {
     Serial.println("T2: MAX31865 nao responde");
   }
+  // FW-08: I2C padrão do ESP32 (SDA 21, SCL 22).
+  rtcPresente = rtc.begin();
+  if (!rtcPresente) {
+    Serial.println("RTC: DS3231 nao responde; registros sem hora");
+  } else if (rtc.lostPower()) {
+    Serial.println("RTC: perdeu a hora (bateria); registros sem hora ate o ajuste por NTP");
+  } else {
+    horaOk = true;
+  }
+
+  // FW-08: não espera a rede; sem Wi-Fi o nó opera com a hora do RTC e tenta de novo sozinho.
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_SENHA);
+  sntp_set_time_sync_notification_cb(aoSincronizarNtp);
+  configTime(0, 0, "pool.ntp.org");   // fuso 0 = UTC
   Serial.println("setup ok: K1 espera a primeira avaliacao");
 }
 
@@ -76,6 +102,17 @@ uint32_t ultimoRegistroMs = 0;   // quando saiu a última linha, para o dt
 
 void loop() {
   atenderSerial(cfg);
+
+  if (ntpSincronizou) {
+    ntpSincronizou = false;
+    if (rtcPresente) {
+      rtc.adjust(DateTime((uint32_t)time(nullptr)));
+      horaOk = true;
+      Serial.printf("[%lu ms] RTC ajustado por NTP: %sZ\n", millis(), rtc.now().timestamp().c_str());
+    } else {
+      Serial.printf("[%lu ms] NTP ok, mas RTC ausente: hora nao gravada\n", millis());
+    }
+  }
 
   // Foto dos valores: o Ticker pode trocá-los no meio deste trecho.
   bool fdvAgora = fdv;
@@ -123,7 +160,16 @@ void loop() {
     marcaMs += cfg.periodoRegistroMs;  // grade fixa: atraso não se acumula
     uint32_t dt = agora - ultimoRegistroMs;
     ultimoRegistroMs = agora;
-    Serial.printf("[%lu ms] dt=%lu | T1 = %.1f C  falha = 0x%02X | T2 = %.1f C  falha = 0x%02X | cond=0x%02X\n",
-                  agora, dt, t1.celsius, t1.falha, t2.celsius, t2.falha, res.condicoes);
+    // FW-07 / seção 7: leitura inválida sai sem valor (campo vazio), nunca um número falso.
+    char t1Txt[8] = "";
+    char t2Txt[8] = "";
+    if (res.t1Valida) snprintf(t1Txt, sizeof(t1Txt), "%.1f", t1.celsius);
+    if (res.t2Valida) snprintf(t2Txt, sizeof(t2Txt), "%.1f", t2.celsius);
+    // FW-08: hora UTC em ISO 8601; vazia se o RTC não tem hora confiável (nunca uma hora falsa).
+    // shortcut: rtc.now() não acusa erro de I2C se o módulo cair depois do boot; checar no autoteste (FW-14).
+    char hora[24] = "";
+    if (horaOk) snprintf(hora, sizeof(hora), "%sZ", rtc.now().timestamp().c_str());
+    Serial.printf("%s [%lu ms] dt=%lu | T1=%s t1_valida=%d falha=0x%02X | T2=%s t2_valida=%d falha=0x%02X | cond=0x%02X\n",
+                  hora, agora, dt, t1Txt, res.t1Valida, t1.falha, t2Txt, res.t2Valida, t2.falha, res.condicoes);
   }
 }
