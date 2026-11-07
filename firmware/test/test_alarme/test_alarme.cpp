@@ -210,8 +210,9 @@ void test_falha_t1_longa_termina_quando_sensor_volta() {
 
 // ---------- Tarefa 4: modo limpeza (FW-06) ----------
 
-// Aperta e solta o BTN_LIMP no instante dado.
+// Solta e aperta o BTN_LIMP no instante dado (o alarme só aceita o aperto depois de ver o botão solto).
 void apertar(Alarme& alarme, uint32_t agoraMs) {
+  alarme.avaliar(normal(), agoraMs);
   Entradas e = normal();
   e.botaoLimpeza = true;
   alarme.avaliar(e, agoraMs);
@@ -282,14 +283,27 @@ void test_aperto_durante_limpeza_e_ignorado() {
   TEST_ASSERT_FALSE(alarme.avaliar(normal(), QUATRO_HORAS_MS).modoLimpeza);
 }
 
-// Botão preso apertado: entra uma vez só; quando expira, não volta sozinho
+// Botão segurado depois do aperto: entra uma vez só; quando expira, não volta sozinho
 void test_botao_segurado_nao_reentra_em_limpeza() {
+  Alarme alarme(P);
+  apertar(alarme, 0);   // e continua apertado
+  Entradas e = normal();
+  e.botaoLimpeza = true;
+  TEST_ASSERT_TRUE(alarme.avaliar(e, 1000).modoLimpeza);
+  TEST_ASSERT_FALSE(alarme.avaliar(e, QUATRO_HORAS_MS).modoLimpeza);
+  TEST_ASSERT_FALSE(alarme.avaliar(e, QUATRO_HORAS_MS + 1000).modoLimpeza);
+}
+
+// Decisão de 06/11/2026: botão já apertado no boot (quebrado ou em curto) não ativa a limpeza;
+// só um aperto de verdade (solto → apertado) ativa
+void test_botao_preso_no_boot_nao_entra_em_limpeza() {
   Alarme alarme(P);
   Entradas e = normal();
   e.botaoLimpeza = true;
-  alarme.avaliar(e, 0);
-  TEST_ASSERT_FALSE(alarme.avaliar(e, QUATRO_HORAS_MS).modoLimpeza);
-  TEST_ASSERT_FALSE(alarme.avaliar(e, QUATRO_HORAS_MS + 1000).modoLimpeza);
+  TEST_ASSERT_FALSE(alarme.avaliar(e, 0).modoLimpeza);
+  TEST_ASSERT_FALSE(alarme.avaliar(e, 1000).modoLimpeza);
+  alarme.avaliar(normal(), 2000);
+  TEST_ASSERT_TRUE(alarme.avaliar(e, 3000).modoLimpeza);
 }
 
 int main() {
@@ -318,5 +332,6 @@ int main() {
   RUN_TEST(test_limpeza_expira_e_subtemp_volta);
   RUN_TEST(test_aperto_durante_limpeza_e_ignorado);
   RUN_TEST(test_botao_segurado_nao_reentra_em_limpeza);
+  RUN_TEST(test_botao_preso_no_boot_nao_entra_em_limpeza);
   return UNITY_END();
 }

@@ -27,7 +27,8 @@ Autor: Gustavo Correa A. Moreira (TCC de Engenharia de Software, entrega em 17/1
 - 05/11/2026: tarefa 4 concluída: registro em grade fixa (`periodoRegistroMs` = 1000, variável para o bloco 2) com `[agora] dt=` no log; dt = 1000 observado.
 - 05/11/2026: tarefa 5 concluída: 5,44 h de log (`firmware/logs/`), 19571 registros, `dt` = 1000 ms em todos, sem falha. FW-01 aprovado pela Serial.
 - 05/11/2026: bloco 1 fechado (`docs/fluxograma.md` criado). FW-02 segue aguardando o teste de pulsos < 50 ms com microcontrolador de teste.
-- **Próximo passo:** bloco 2: etapa Tasks (`docs/tarefas.md` do bloco 2) para FW-03 a FW-06. Pendente para o bloco 3: testar sensor aberto (bornes vazios).
+- 06/11/2026: bloco 2, tarefas 1 a 7 implementadas (`lib/alarme`, `lib/configuracao`, NVS + `get`/`set`, K1 no GPIO 4, `BTN_LIMP` no GPIO 34 com 10 kΩ externo). PC 39/39. Bancada com LED no lugar do relé: cenários 2, 3, 4 e limpeza ok. Relé CW-020 é de 5 V, acionamento em nível baixo: precisa do BC547 (chega 07/11).
+- **Próximo passo:** repetir FW-05 com relé + BC547; confirmar na placa a expiração da limpeza com o cenário 3 e o botão preso no boot; depois "fechar bloco 2". Pendente para o bloco 3: testar sensor aberto (bornes vazios).
 
 ## Fonte da verdade
 

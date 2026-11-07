@@ -16,7 +16,7 @@ Princípio: as tarefas 1 a 4 são lógica pura em `firmware/lib/alarme/` (sem `A
 | 4 | Modo limpeza: `BTN_LIMP` suspende só `SUBTEMP_SEM_DESVIO` por até `TEMPO_LIMPEZA` | FW-06 | 2 | Testes: em limpeza o cenário 3 fica verde e o 4 vermelho; após `TEMPO_LIMPEZA` o cenário 3 volta a vermelho | Concluída (06/11/2026, 7 testes novos) |
 | 5 | Parâmetros da seção 4 configuráveis sem recompilar (inclui `PERIODO_REGISTRO`) | Seção 4 | — | Mudar `T_MIN` sem recompilar e ver o efeito na Serial | Concluída (06/11/2026: PC 38/38; placa: `set` gravado, `dt` seguiu o período, valores mantidos após reinício) |
 | 6 | Relé `K1` (GPIO 4) com segurança positiva: desenergizado do reset até liberar a operação; energiza só com torre verde | FW-05 | Módulo relé | Cortar a alimentação → vermelho + sirene; reset → vermelho até o fim do `setup()` | Parcial (06/11/2026: com LED no GPIO 4, apagado no reset e sem USB, aceso após `setup ok`; falta o relé com BC547) |
-| 7 | Integração no `main.cpp`: avaliar as regras a cada ciclo, comandar `K1`, mostrar condições na Serial; `BTN_LIMP` no Ticker com debounce | FW-03, FW-04, FW-06 | 1–6 | Cenários 1 a 7 do Quadro 1 na bancada com resistores e jumpers; tempo até a torre < 2 s | Pendente |
+| 7 | Integração no `main.cpp`: avaliar as regras a cada ciclo, comandar `K1`, mostrar condições na Serial; `BTN_LIMP` no Ticker com debounce | FW-03, FW-04, FW-06 | 1–6 | Cenários 1 a 7 do Quadro 1 na bancada com resistores e jumpers; tempo até a torre < 2 s | Concluída (06/11/2026: cenários 2, 3, 4 e limpeza na placa; FW-04 ≈ 0,9 s; PC 39/39; cenário 1 sem resistor adequado, 5–7 nos blocos 3 e 4) |
 
 ### Pendências que afetam o bloco 2 (perguntar, não supor)
 

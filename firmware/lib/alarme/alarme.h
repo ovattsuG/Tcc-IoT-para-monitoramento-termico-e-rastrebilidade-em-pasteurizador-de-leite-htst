@@ -46,6 +46,8 @@ struct Resultado {
 class Alarme {
 public:
   explicit Alarme(const Parametros& p);
+  // Troca os limites sem perder o estado (histerese, cronômetro, limpeza): um "set" vale no próximo ciclo.
+  void definirParametros(const Parametros& p) { p_ = p; }
   Resultado avaliar(const Entradas& e, uint32_t agoraMs);
 private:
   bool leituraValida(float celsius, uint8_t falha) const;
@@ -57,6 +59,7 @@ private:
   uint8_t invalidasT1_ = 0;   // leituras inválidas seguidas
   uint8_t invalidasT2_ = 0;
   bool limpeza_ = false;
-  bool botaoAnterior_ = false;   // para perceber o aperto (solto → apertado)
+  // Para perceber o aperto (solto → apertado). Começa "apertado": botão preso no boot não ativa a limpeza.
+  bool botaoAnterior_ = true;
   uint32_t limpezaDesdeMs_ = 0;
 };

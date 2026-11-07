@@ -1,8 +1,7 @@
-// FW-02: lê a válvula de desvio (FDV) e o pressostato (PRESS) a cada 10 ms,
-// filtra o ruído de contato e mostra na Serial cada mudança aceita.
-// FW-01: lê as temperaturas T1 e T2 (PT100 + MAX31865) e mostra na Serial.
+// FW-02: lê a válvula de desvio (FDV), o pressostato (PRESS) e o BTN_LIMP a cada 10 ms, com filtro de ruído.
+// FW-01: lê T1 e T2 (PT100 + MAX31865) a cada 1 s. FW-03/04/06: avalia as regras da seção 5 e comanda a torre.
+// FW-05: relé K1 desenergizado do reset até a primeira avaliação verde.
 // Seção 4: parâmetros carregados da NVS e ajustáveis pela Serial (get / set NOME valor).
-// FW-05: relé K1 da torre desenergizado do reset até o fim do setup().
 #include <Arduino.h>
 #include <Ticker.h>
 #include "config.h"
@@ -11,25 +10,30 @@
 #include "configuracao.h"
 #include "parametros_nvs.h"
 #include "comandos_serial.h"
+#include "alarme.h"
 
 Ticker tickerEntradas;
 Configuracao cfg = configuracaoPadrao();
 SensorPT100 sensorT1(PINO_CS_T1, FIOS_PT100);
 SensorPT100 sensorT2(PINO_CS_T2, FIOS_PT100);
+Alarme alarme(cfg.alarme);
 
 // Um filtro por entrada. Começam em 1: com pull-up, pino solto lê 1.
 Debounce filtroFdv(TEMPO_DEBOUNCE_MS, true);
 Debounce filtroPress(TEMPO_DEBOUNCE_MS, true);
+Debounce filtroBtn(TEMPO_DEBOUNCE_MS, true);
 
 // Valores já filtrados. volatile: escritos pelo Ticker e lidos pelo loop().
 volatile bool fdv = true;
 volatile bool press = true;
+volatile bool btn = true;
 
 // Chamada pelo Ticker a cada 10 ms
 void lerEntradas() {
   uint32_t agora = millis();
   fdv = filtroFdv.atualiza(digitalRead(PINO_FDV), agora);
   press = filtroPress.atualiza(digitalRead(PINO_PRESS), agora);
+  btn = filtroBtn.atualiza(digitalRead(PINO_BTN_LIMP), agora);
 }
 
 void setup() {
@@ -43,6 +47,7 @@ void setup() {
 
   pinMode(PINO_FDV, INPUT_PULLUP);
   pinMode(PINO_PRESS, INPUT_PULLUP);
+  pinMode(PINO_BTN_LIMP, INPUT);   // GPIO 34 não tem pull-up interno: o de 10 kΩ é externo
   tickerEntradas.attach_ms(PERIODO_AMOSTRA_MS, lerEntradas);
 
   if (!sensorT1.iniciar()) {
@@ -51,17 +56,22 @@ void setup() {
   if (!sensorT2.iniciar()) {
     Serial.println("T2: MAX31865 nao responde");
   }
-
-  // Provisório (tarefa 6): fim do setup libera a operação. Na tarefa 7 quem decide é o Alarme.
-  Serial.println("setup ok: K1 energizado");
-  digitalWrite(PINO_K1, HIGH);
+  Serial.println("setup ok: K1 espera a primeira avaliacao");
 }
 
 // Último valor impresso, para o loop() só escrever quando algo mudar.
 bool fdvAnterior = true;
 bool pressAnterior = true;
+// Começa como "vermelho": o K1 está desligado até a primeira avaliação.
+Resultado anterior{0, true, false, false, false};
 
-uint32_t marcaMs = 0;            // marca da grade: 1000, 2000, 3000...
+// Última leitura e último resultado, para o registro imprimir no período dele.
+LeituraTemperatura t1{};
+LeituraTemperatura t2{};
+Resultado res{0, true, false, false, false};
+
+uint32_t marcaLeituraMs = 0;     // grade do ciclo de leitura: 1000, 2000, 3000...
+uint32_t marcaMs = 0;            // grade do registro
 uint32_t ultimoRegistroMs = 0;   // quando saiu a última linha, para o dt
 
 void loop() {
@@ -70,6 +80,7 @@ void loop() {
   // Foto dos valores: o Ticker pode trocá-los no meio deste trecho.
   bool fdvAgora = fdv;
   bool pressAgora = press;
+  bool btnAgora = btn;
 
   if (fdvAgora != fdvAnterior) {
     Serial.printf("[%lu ms] FDV: %d -> %d\n", millis(), fdvAnterior, fdvAgora);
@@ -81,14 +92,38 @@ void loop() {
   }
 
   uint32_t agora = millis();
+  if (agora - marcaLeituraMs >= PERIODO_LEITURA_MS) {
+    marcaLeituraMs += PERIODO_LEITURA_MS;
+    t1 = sensorT1.ler();
+    t2 = sensorT2.ler();
+
+    Entradas e;
+    e.pressaoOk = !pressAgora;   // contato fechado (pressão OK) puxa o pino para 0
+    e.t1 = t1.celsius;
+    e.t1Falha = t1.falha;
+    e.t2 = t2.celsius;
+    e.t2Falha = t2.falha;
+    e.fdv = (fdvAgora == (cfg.fdvNivelDesvio != 0)) ? Fdv::DESVIO : Fdv::DIRETO;   // D1
+    e.botaoLimpeza = !btnAgora;  // apertado liga ao GND
+
+    alarme.definirParametros(cfg.alarme);
+    res = alarme.avaliar(e, agora);
+    digitalWrite(PINO_K1, res.torreVermelha ? LOW : HIGH);   // segurança positiva: verde = energizado
+
+    if (res.condicoes != anterior.condicoes || res.torreVermelha != anterior.torreVermelha ||
+        res.modoLimpeza != anterior.modoLimpeza) {
+      Serial.printf("[%lu ms] condicoes: 0x%02X -> 0x%02X | torre %s | limpeza %d\n", agora,
+                    anterior.condicoes, res.condicoes, res.torreVermelha ? "VERMELHA" : "VERDE",
+                    res.modoLimpeza);
+      anterior = res;
+    }
+  }
+
   if (agora - marcaMs >= cfg.periodoRegistroMs) {
     marcaMs += cfg.periodoRegistroMs;  // grade fixa: atraso não se acumula
     uint32_t dt = agora - ultimoRegistroMs;
     ultimoRegistroMs = agora;
-
-    LeituraTemperatura t1 = sensorT1.ler();
-    LeituraTemperatura t2 = sensorT2.ler();
-    Serial.printf("[%lu ms] dt=%lu | T1 = %.1f C  falha = 0x%02X | T2 = %.1f C  falha = 0x%02X\n",
-                  agora, dt, t1.celsius, t1.falha, t2.celsius, t2.falha);
+    Serial.printf("[%lu ms] dt=%lu | T1 = %.1f C  falha = 0x%02X | T2 = %.1f C  falha = 0x%02X | cond=0x%02X\n",
+                  agora, dt, t1.celsius, t1.falha, t2.celsius, t2.falha, res.condicoes);
   }
 }
