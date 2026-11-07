@@ -2,6 +2,23 @@
 
 Status: Pendente · Em andamento · Implementado – aguardando bancada · Concluída
 
+## Bloco 4 (FW-09 a FW-12: SD, MQTT, guarda e reenvio)
+
+Data: 07/11/2026 · Base: `spec/FRS_Edge-HTST_v1.5.md`, seções 5, 6 e 7 · Plano: `docs/plano.md`, bloco 4
+
+| # | Tarefa | Req. | Depende de | Critério de conclusão | Status |
+|---|---|---|---|---|---|
+| 1 | `lib/registro/`: struct do registro → linha CSV e JSON da seção 7 (campo vazio se inválida, `alarmes` com nomes separados por `\|`, `modo`, `fdv`) | FW-09, FW-10 | PC | Testes no PC reproduzem as 3 linhas de exemplo da seção 7 | Concluída (07/11/2026, 8 testes; PC 47/47) |
+| 2 | `FALHA_SD` no `lib/alarme` (entrada de fora, verde) | FW-12 | 1 | Teste: cartão com falha → `FALHA_SD`, torre não muda | Pendente |
+| 3 | `seq` persistente na NVS, gravado em blocos | FW-10 | — | Reiniciar a placa: `seq` continua maior que o último, nunca repete | Pendente |
+| 4 | SD no HSPI: 1 linha/s em `/AAAAMMDD.csv` (dia UTC) com cabeçalho; erro → `FALHA_SD` + log | FW-09, FW-12 | 1–3, módulo SD | Arquivo abre no PC com as linhas certas; tirar o cartão → `FALHA_SD`, torre igual | Pendente |
+| 5 | MQTT (`esp-mqtt`, QoS 1) em `htst/<device_id>/leituras`, sem bloquear; broker em `segredos.h` | FW-10 | 1, broker | `mosquitto_sub` mostra 1 JSON/s com `seq` crescente | Pendente |
+| 6 | Guarda e reenvio: o envio lê do CSV a próxima linha não confirmada; posição confirmada na NVS | FW-11 | 4, 5 | Derrubar o broker 5 min: SD segue, torre segue; ao voltar, chegam todas em ordem | Pendente |
+| 7 | Bancada longa: 24 h de SD (FW-09) e queda de rede longa (FW-11) | FW-09, FW-11 | 6 | Critérios da seção 6 | Pendente |
+
+### Pendências do bloco 4 (perguntar, não supor)
+- Respondido (07/11/2026): módulo MicroSD de 3,3 V, cartão de 16 GB; broker Mosquitto no PC; `device_id` = `htst-01` (configurável); registro sem hora em `/SEMHORA.csv`.
+
 ## Bloco 3 (FW-07, FW-08: falha de sensor e hora)
 
 Data: 06/11/2026 · Base: `spec/FRS_Edge-HTST_v1.5.md`, seções 5, 6 e 7 e Anexo A
