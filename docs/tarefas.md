@@ -2,6 +2,21 @@
 
 Status: Pendente · Em andamento · Implementado – aguardando bancada · Concluída
 
+## Bloco 5 (FW-13, FW-14: watchdog e autoteste)
+
+Data: 07/11/2026 · Base: `spec/FRS_Edge-HTST_v1.5.md`, seções 5 e 6
+
+| # | Tarefa | Req. | Depende de | Critério de conclusão | Status |
+|---|---|---|---|---|---|
+| 1 | Condição `WDT` no `lib/alarme` (bit 0x40, entrada de fora, torre verde) e no `lib/registro` (nome na ordem da seção 5, entre `FALHA_T2` e `FALHA_SD`) | FW-13 | PC | Testes no PC: `WDT` sozinho → verde; JSON/CSV com `WDT` | Concluída (07/11/2026, 3 testes novos no alarme + 1 ajustado no registro; PC 56/56) |
+| 2 | Watchdog de tarefa de 2 s no `loop()`; no boot, `esp_reset_reason()` = watchdog → `WDT` **só no 1º registro**; comando de Serial `travar` (laço infinito, ferramenta de verificação) | FW-13 | 1 | `travar` → reinício em ~2 s; o 1º registro depois do boot tem `WDT` no CSV e no MQTT; o 2º, não | Pendente |
+| 3 | Autoteste no `setup()` antes de liberar o `K1`: eco dos 2 MAX31865 (falhou → leitura inválida até responder), RTC (log + hora vazia, FW-08), SD montado já no `setup()` (acaba o `FALHA_SD` falso no 1º registro) | FW-14, FW-05 | 2 | Boot com cada periférico desligado: T1 → `FALHA_T1`/vermelho; T2 → `FALHA_T2`/verde; SD → `FALHA_SD`/verde; RTC → log e hora vazia; boot normal sem `FALHA_SD` no 1º registro | Pendente |
+
+### Decisões do bloco 5 (07/11/2026)
+- `WDT` aparece só no 1º registro depois do reinício (evento pontual).
+- Falha do RTC no autoteste: log e registros sem hora (comportamento do FW-08); a seção 5 não ganha condição nova.
+- Teste do FW-13 por comando de Serial `travar`, documentado como ferramenta de verificação.
+
 ## Bloco 4 (FW-09 a FW-12: SD, MQTT, guarda e reenvio)
 
 Data: 07/11/2026 · Base: `spec/FRS_Edge-HTST_v1.5.md`, seções 5, 6 e 7 · Plano: `docs/plano.md`, bloco 4

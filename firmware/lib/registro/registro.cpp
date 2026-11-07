@@ -12,12 +12,13 @@ static const struct { uint16_t bit; const char* nome; } NOMES[] = {
     {PRESSAO, "PRESSAO"},
     {FALHA_T1, "FALHA_T1"},
     {FALHA_T2, "FALHA_T2"},
+    {WDT, "WDT"},
     {FALHA_SD, "FALHA_SD"},
     {SUBTEMP, "SUBTEMP"},
 };
 
-// "FALHA_T1|SUBTEMP"; vazio = OK. Os 6 nomes, com os "|", somam 61 letras: cabem em 64.
-static void nomesCondicoes(uint16_t condicoes, char (&texto)[64]) {
+// "FALHA_T1|SUBTEMP"; vazio = OK. Os 7 nomes, com os "|", somam 65 letras: cabem em 80.
+static void nomesCondicoes(uint16_t condicoes, char (&texto)[80]) {
   texto[0] = '\0';
   for (const auto& n : NOMES) {
     if (!(condicoes & n.bit)) continue;
@@ -40,7 +41,7 @@ static const char* textoFdv(Fdv f) { return f == Fdv::DESVIO ? "DESVIO" : "DIRET
 static const char* textoModo(bool limpeza) { return limpeza ? "LIMPEZA" : "PRODUCAO"; }
 
 size_t formatarCsv(const Registro& r, char* destino, size_t tamanho) {
-  char t1[16], t2[16], alarmes[64];
+  char t1[16], t2[16], alarmes[80];
   temperatura(r.t1, r.t1Valida, "", t1);
   temperatura(r.t2, r.t2Valida, "", t2);
   nomesCondicoes(r.condicoes, alarmes);
@@ -51,7 +52,7 @@ size_t formatarCsv(const Registro& r, char* destino, size_t tamanho) {
 }
 
 size_t formatarJson(const Registro& r, const char* deviceId, char* destino, size_t tamanho) {
-  char t1[16], t2[16], alarmes[64], hora[32];
+  char t1[16], t2[16], alarmes[80], hora[32];
   temperatura(r.t1, r.t1Valida, "null", t1);
   temperatura(r.t2, r.t2Valida, "null", t2);
   nomesCondicoes(r.condicoes, alarmes);

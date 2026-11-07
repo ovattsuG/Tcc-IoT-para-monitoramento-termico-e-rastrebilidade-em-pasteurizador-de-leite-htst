@@ -328,6 +328,38 @@ void test_falha_sd_nao_esconde_pressao() {
   TEST_ASSERT_TRUE(r.torreVermelha);
 }
 
+// ---------- Bloco 5, tarefa 1: WDT (FW-13) ----------
+
+// Seção 5: WDT é só registro e envio; a torre segue verde
+void test_wdt_e_verde() {
+  Alarme alarme(P);
+  Entradas e = normal();
+  e.reinicioWdt = true;
+  Resultado r = alarme.avaliar(e, 0);
+  TEST_ASSERT_EQUAL_UINT16(WDT, r.condicoes);
+  TEST_ASSERT_FALSE(r.torreVermelha);
+}
+
+// WDT não esconde uma condição crítica que já esteja presente no boot
+void test_wdt_nao_esconde_pressao() {
+  Alarme alarme(P);
+  Entradas e = normal();
+  e.reinicioWdt = true;
+  e.pressaoOk = false;
+  Resultado r = alarme.avaliar(e, 0);
+  TEST_ASSERT_EQUAL_UINT16(WDT | PRESSAO, r.condicoes);
+  TEST_ASSERT_TRUE(r.torreVermelha);
+}
+
+// O alarme não guarda o WDT: some no ciclo em que a entrada volta a false (1º registro só)
+void test_wdt_some_no_ciclo_seguinte() {
+  Alarme alarme(P);
+  Entradas e = normal();
+  e.reinicioWdt = true;
+  alarme.avaliar(e, 0);
+  TEST_ASSERT_EQUAL_UINT16(0, alarme.avaliar(normal(), 1000).condicoes);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_tudo_normal_e_ok_verde);
@@ -357,5 +389,8 @@ int main() {
   RUN_TEST(test_botao_preso_no_boot_nao_entra_em_limpeza);
   RUN_TEST(test_falha_sd_e_verde);
   RUN_TEST(test_falha_sd_nao_esconde_pressao);
+  RUN_TEST(test_wdt_e_verde);
+  RUN_TEST(test_wdt_nao_esconde_pressao);
+  RUN_TEST(test_wdt_some_no_ciclo_seguinte);
   return UNITY_END();
 }

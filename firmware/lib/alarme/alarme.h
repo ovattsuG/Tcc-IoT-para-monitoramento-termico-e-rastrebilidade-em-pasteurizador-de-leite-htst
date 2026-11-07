@@ -12,6 +12,7 @@ enum Condicao : uint16_t {
   FALHA_T1           = 1 << 3,
   FALHA_T2           = 1 << 4,
   FALHA_SD           = 1 << 5,   // FW-12: só registro e envio, torre verde
+  WDT                = 1 << 6,   // FW-13: reiniciou por watchdog; só registro e envio, torre verde
 };
 
 enum class Fdv : uint8_t { DIRETO, DESVIO };
@@ -35,6 +36,7 @@ struct Entradas {
   Fdv fdv;          // já traduzido do pino (D1)
   bool botaoLimpeza;  // BTN_LIMP já filtrado: true = apertado
   bool sdFalha;       // cartão ausente, cheio ou erro de gravação (FW-12); omitido = false
+  bool reinicioWdt;   // o boot veio de um watchdog e este é o 1º registro (FW-13); omitido = false
 };
 
 struct Resultado {

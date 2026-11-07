@@ -35,6 +35,7 @@ Resultado Alarme::avaliar(const Entradas& e, uint32_t agoraMs) {
   if (invalidasT1_ >= 2) r.condicoes |= FALHA_T1;
   if (invalidasT2_ >= 2) r.condicoes |= FALHA_T2;
   if (e.sdFalha) r.condicoes |= FALHA_SD;
+  if (e.reinicioWdt) r.condicoes |= WDT;
 
   // Histerese: entre T_MIN e T_MIN + HIST mantém o estado; T1 inválido também mantém.
   if (r.t1Valida) {
