@@ -28,12 +28,13 @@
 | 06/11/2026 | `BTN_LIMP` apertado durante o modo limpeza é ignorado; o modo termina só por `TEMPO_LIMPEZA` | Reiniciar o tempo a cada aperto; encerrar a limpeza no segundo aperto | Mais simples; impede estender a suspensão do alarme sem querer. A spec não define o caso |
 | 06/11/2026 | Classificação da leitura (falha do MAX31865 ou fora de `FAIXA_VALIDA`) e contagem de 2 seguidas dentro do `lib/alarme/`; o `Resultado` devolve `t1Valida`/`t2Valida` para o registro (bloco 4) | Módulo `lib/validacao/` separado (previsto no plano) | A regra é de uma linha e a contagem precisa de memória, que o `Alarme` já guarda; `FALHA_T1` é linha da seção 5. Devolver a validade evita que o CSV repita a regra |
 | 06/11/2026 | `BTN_LIMP` como botão de pulso com expiração (como na spec); o cronômetro do `T_FDV` continua durante a limpeza, e ao expirar o `SUBTEMP_SEM_DESVIO` vem na hora se a situação persistir | Chave liga/desliga (limpeza enquanto ligada); zerar o cronômetro ao sair da limpeza | Uma chave esquecida desligaria o alarme principal para sempre e mudaria o FW-06. Continuar contando é o lado seguro: o leite já está frio com a FDV direto há mais de `T_FDV` |
+| 06/11/2026 | Comandos `get`/`set NOME valor` na Serial, tempos digitados em segundos; o valor novo só passa a valer depois de gravado na NVS; a `Configuracao` é gravada inteira como bytes | Interpretar o comando direto no `main.cpp` (sem teste); aplicar mesmo se a gravação falhar; uma chave da NVS por parâmetro | A interpretação é fronteira de confiança e fica testada em `lib/`; o que roda é sempre o que está gravado (sem surpresa no reinício); bytes inteiros = menos código, e um tamanho diferente (firmware novo) volta aos padrões |
 
 ## Decisões em aberto (especificação, seção 8)
 
 | ID | Decisão | Status | Resolução |
 |---|---|---|---|
-| D1 | Nível do indutivo que corresponde a `DESVIO` | Aberta | |
+| D1 | Nível do indutivo que corresponde a `DESVIO` | Provisória (06/11/2026) | Sensor NPN vê metal em `DESVIO` → pino em 0. Parâmetro `FDV_DESVIO` (padrão 0), ajustável pela Serial; confirmar na válvula |
 | D2 | Valor de `T_FDV` | Aberta | |
 | D3 | Modo limpeza necessário? Duração máxima | Aberta | |
 | D4 | Fonte de alimentação da torre | Aberta | |

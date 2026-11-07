@@ -1,13 +1,18 @@
 // FW-02: lê a válvula de desvio (FDV) e o pressostato (PRESS) a cada 10 ms,
 // filtra o ruído de contato e mostra na Serial cada mudança aceita.
 // FW-01: lê as temperaturas T1 e T2 (PT100 + MAX31865) e mostra na Serial.
+// Seção 4: parâmetros carregados da NVS e ajustáveis pela Serial (get / set NOME valor).
 #include <Arduino.h>
 #include <Ticker.h>
 #include "config.h"
 #include "debounce.h"
 #include "temperatura.h"
+#include "configuracao.h"
+#include "parametros_nvs.h"
+#include "comandos_serial.h"
 
 Ticker tickerEntradas;
+Configuracao cfg = configuracaoPadrao();
 SensorPT100 sensorT1(PINO_CS_T1, FIOS_PT100);
 SensorPT100 sensorT2(PINO_CS_T2, FIOS_PT100);
 
@@ -28,6 +33,9 @@ void lerEntradas() {
 
 void setup() {
   Serial.begin(115200);
+  carregarConfiguracao(cfg);
+  imprimirConfiguracao(cfg);
+
   pinMode(PINO_FDV, INPUT_PULLUP);
   pinMode(PINO_PRESS, INPUT_PULLUP);
   tickerEntradas.attach_ms(PERIODO_AMOSTRA_MS, lerEntradas);
@@ -44,12 +52,12 @@ void setup() {
 bool fdvAnterior = true;
 bool pressAnterior = true;
 
-// PERIODO_REGISTRO (spec, seção 4). Vira configurável sem recompilar no bloco 2.
-uint32_t periodoRegistroMs = 1000;
 uint32_t marcaMs = 0;            // marca da grade: 1000, 2000, 3000...
 uint32_t ultimoRegistroMs = 0;   // quando saiu a última linha, para o dt
 
 void loop() {
+  atenderSerial(cfg);
+
   // Foto dos valores: o Ticker pode trocá-los no meio deste trecho.
   bool fdvAgora = fdv;
   bool pressAgora = press;
@@ -64,8 +72,8 @@ void loop() {
   }
 
   uint32_t agora = millis();
-  if (agora - marcaMs >= periodoRegistroMs) {
-    marcaMs += periodoRegistroMs;  // grade fixa: atraso não se acumula
+  if (agora - marcaMs >= cfg.periodoRegistroMs) {
+    marcaMs += cfg.periodoRegistroMs;  // grade fixa: atraso não se acumula
     uint32_t dt = agora - ultimoRegistroMs;
     ultimoRegistroMs = agora;
 
