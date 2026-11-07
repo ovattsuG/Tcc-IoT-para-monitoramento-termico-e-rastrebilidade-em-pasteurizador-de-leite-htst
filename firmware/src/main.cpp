@@ -2,6 +2,7 @@
 // filtra o ruído de contato e mostra na Serial cada mudança aceita.
 // FW-01: lê as temperaturas T1 e T2 (PT100 + MAX31865) e mostra na Serial.
 // Seção 4: parâmetros carregados da NVS e ajustáveis pela Serial (get / set NOME valor).
+// FW-05: relé K1 da torre desenergizado do reset até o fim do setup().
 #include <Arduino.h>
 #include <Ticker.h>
 #include "config.h"
@@ -32,6 +33,10 @@ void lerEntradas() {
 }
 
 void setup() {
+  // FW-05: K1 desenergizado antes de qualquer outra coisa; valor escrito antes de virar saída.
+  digitalWrite(PINO_K1, LOW);
+  pinMode(PINO_K1, OUTPUT);
+
   Serial.begin(115200);
   carregarConfiguracao(cfg);
   imprimirConfiguracao(cfg);
@@ -46,6 +51,10 @@ void setup() {
   if (!sensorT2.iniciar()) {
     Serial.println("T2: MAX31865 nao responde");
   }
+
+  // Provisório (tarefa 6): fim do setup libera a operação. Na tarefa 7 quem decide é o Alarme.
+  Serial.println("setup ok: K1 energizado");
+  digitalWrite(PINO_K1, HIGH);
 }
 
 // Último valor impresso, para o loop() só escrever quando algo mudar.

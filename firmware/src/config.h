@@ -7,6 +7,7 @@
 
 constexpr uint8_t PINO_FDV   = 27;  // sensor indutivo da válvula de desvio
 constexpr uint8_t PINO_PRESS = 26;  // pressostato da linha de ar
+constexpr uint8_t PINO_K1    = 4;   // FW-05: relé da torre; 1 = energizado = verde (LED direto ou BC547)
 
 constexpr uint32_t PERIODO_AMOSTRA_MS = 10;   // de quanto em quanto tempo lê as entradas
 constexpr uint32_t TEMPO_DEBOUNCE_MS  = 100;  // FW-02: tempo parado para aceitar uma mudança
