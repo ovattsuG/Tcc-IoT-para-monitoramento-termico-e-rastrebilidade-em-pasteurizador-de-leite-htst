@@ -12,7 +12,7 @@ Data: 07/11/2026 · Base: `spec/FRS_Edge-HTST_v1.5.md`, seções 5, 6 e 7 · Pla
 | 2 | `FALHA_SD` no `lib/alarme` (entrada de fora, verde) | FW-12 | 1 | Teste: cartão com falha → `FALHA_SD`, torre não muda | Concluída (07/11/2026, 3 testes; PC 50/50) |
 | 3 | `seq` persistente na NVS, gravado em blocos | FW-10 | — | Reiniciar a placa: `seq` continua maior que o último, nunca repete | Concluída (07/11/2026: PC 53/53; placa: reset em `seq=92` → volta em `seq=100`) |
 | 4 | SD no HSPI: 1 linha/s em `/AAAAMMDD.csv` (dia UTC) com cabeçalho; erro → `FALHA_SD` + log | FW-09, FW-12 | 1–3, módulo SD | Arquivo abre no PC com as linhas certas; tirar o cartão → `FALHA_SD`, torre igual | Concluída na placa (07/11/2026: gravação, `FALHA_SD`, retorno do cartão, `dt=1000` com o cartão removido); falta abrir o CSV no PC (sem leitor de cartão) |
-| 5 | MQTT (`esp-mqtt`, QoS 1) em `htst/<device_id>/leituras`, sem bloquear; broker em `segredos.h` | FW-10 | 1, broker | `mosquitto_sub` mostra 1 JSON/s com `seq` crescente | Pendente |
+| 5 | MQTT (`esp-mqtt`, QoS 1) em `htst/<device_id>/leituras`, sem bloquear; broker em `segredos.h` | FW-10 | 1, broker | `mosquitto_sub` mostra 1 JSON/s com `seq` crescente | Concluída (07/11/2026) |
 | 6 | Guarda e reenvio: o envio lê do CSV a próxima linha não confirmada; posição confirmada na NVS | FW-11 | 4, 5 | Derrubar o broker 5 min: SD segue, torre segue; ao voltar, chegam todas em ordem | Pendente |
 | 7 | Bancada longa: 24 h de SD (FW-09) e queda de rede longa (FW-11) | FW-09, FW-11 | 6 | Critérios da seção 6 | Pendente |
 

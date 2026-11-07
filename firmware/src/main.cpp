@@ -15,6 +15,7 @@
 #include "sequencia.h"
 #include "registro.h"
 #include "cartao_sd.h"
+#include "rede_mqtt.h"
 #include <RTClib.h>
 #include <WiFi.h>
 #include <esp_sntp.h>
@@ -88,6 +89,7 @@ void setup() {
   WiFi.begin(WIFI_SSID, WIFI_SENHA);
   sntp_set_time_sync_notification_cb(aoSincronizarNtp);
   configTime(0, 0, "pool.ntp.org");   // fuso 0 = UTC
+  iniciarMqtt();                       // FW-10: conecta em segundo plano
   iniciarTarefaSd();   // FW-09/12: o cartão é tratado em outra tarefa, sem travar o loop()
   Serial.println("setup ok: K1 espera a primeira avaliacao");
 }
@@ -189,6 +191,10 @@ void loop() {
       Serial.println("registro: linha nao coube; nada gravado");
     } else {
       if (!enfileirarLinhaSd(hora, linha)) Serial.println("SD: fila cheia; linha descartada");   // FW-09 / FW-12
+      // FW-10: ao vivo, só com o broker conectado; sem conexão a linha fica no SD (reenvio: tarefa 6).
+      char json[320];
+      if (formatarJson(reg, DEVICE_ID, json, sizeof(json)) > 0) publicarRegistro(json);
+      else Serial.println("registro: JSON nao coube; nada enviado");
       Serial.printf("[%lu ms] dt=%lu falha1=0x%02X falha2=0x%02X | %s\n", agora, dt, t1.falha, t2.falha, linha);
     }
   }
