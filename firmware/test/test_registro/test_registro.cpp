@@ -66,6 +66,15 @@ void test_json_sem_hora_e_null() {
   TEST_ASSERT_NOT_NULL(strstr(json, "\"timestamp_utc\":null,"));
 }
 
+// Todas as condições ao mesmo tempo: ordem da seção 5 e o texto cabe inteiro
+void test_todas_as_condicoes_cabem_na_ordem() {
+  Registro r = OK_DIRETO;
+  r.condicoes = SUBTEMP | FALHA_SD | FALHA_T2 | FALHA_T1 | PRESSAO | SUBTEMP_SEM_DESVIO;
+  char linha[160];
+  TEST_ASSERT_TRUE(formatarCsv(r, linha, sizeof(linha)) > 0);
+  TEST_ASSERT_NOT_NULL(strstr(linha, ",SUBTEMP_SEM_DESVIO|PRESSAO|FALHA_T1|FALHA_T2|FALHA_SD|SUBTEMP"));
+}
+
 // Não coube: devolve 0, e quem chama não grava nem envia
 void test_texto_que_nao_cabe_devolve_zero() {
   char pequeno[20];
@@ -82,6 +91,7 @@ int main() {
   RUN_TEST(test_csv_limpeza_sem_hora_e_varias_condicoes);
   RUN_TEST(test_json_com_leitura_invalida);
   RUN_TEST(test_json_sem_hora_e_null);
+  RUN_TEST(test_todas_as_condicoes_cabem_na_ordem);
   RUN_TEST(test_texto_que_nao_cabe_devolve_zero);
   return UNITY_END();
 }

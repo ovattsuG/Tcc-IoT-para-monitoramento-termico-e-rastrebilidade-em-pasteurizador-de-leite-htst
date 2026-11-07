@@ -1,0 +1,14 @@
+// FW-09 / FW-12: grava as linhas CSV da seção 7 no MicroSD (HSPI), um arquivo por dia UTC.
+// O cartão é tratado numa tarefa própria do FreeRTOS: o loop() só põe a linha numa fila e segue,
+// então um cartão travado ou removido não atrasa as regras de alarme nem a torre (FW-04, FW-11).
+#pragma once
+
+// Chamar no setup(): cria a fila e a tarefa, que monta o cartão.
+void iniciarTarefaSd();
+
+// Põe a linha na fila sem esperar. horaUtc "2026-11-07T..." → /20261107.csv; "" → /SEMHORA.csv.
+// false = fila cheia (cartão travado há vários segundos): a linha é descartada e vira FALHA_SD.
+bool enfileirarLinhaSd(const char* horaUtc, const char* linha);
+
+// true = cartão ausente, erro de gravação ou fila cheia (condição FALHA_SD). Some na próxima gravação boa.
+bool sdComFalha();

@@ -12,10 +12,11 @@ static const struct { uint16_t bit; const char* nome; } NOMES[] = {
     {PRESSAO, "PRESSAO"},
     {FALHA_T1, "FALHA_T1"},
     {FALHA_T2, "FALHA_T2"},
+    {FALHA_SD, "FALHA_SD"},
     {SUBTEMP, "SUBTEMP"},
 };
 
-// "FALHA_T1|SUBTEMP"; vazio = OK. 5 nomes somam menos de 64 letras.
+// "FALHA_T1|SUBTEMP"; vazio = OK. Os 6 nomes, com os "|", somam 61 letras: cabem em 64.
 static void nomesCondicoes(uint16_t condicoes, char (&texto)[64]) {
   texto[0] = '\0';
   for (const auto& n : NOMES) {

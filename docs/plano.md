@@ -8,7 +8,7 @@ Data: 03/11/2026 · Baseado em `spec/FRS_Edge-HTST_v1.5.md`
 |---|---|---|---|
 | Ferramenta | VS Code + PlatformIO | Arduino IDE | Testes unitários no PC (`pio test -e native`), versão das bibliotecas registrada no `platformio.ini`, agente de IA lê `spec/` direto do projeto |
 | Framework | Arduino (núcleo da Espressif para ESP32) | ESP-IDF | Mais simples, biblioteca pronta para o MAX31865, prazo curto |
-| Execução | `loop()` único + `Ticker` para as entradas | Tarefas do FreeRTOS | Mais simples de entender; o `Ticker` resolve o único ponto crítico do bloco 1 (leitura do PT100 bloqueia ~75 ms) |
+| Execução | `loop()` único + `Ticker` para as entradas; **a partir do bloco 4, mais uma tarefa do FreeRTOS para o SD** (07/11/2026) | Tudo no `loop()` | Mais simples de entender; o `Ticker` resolve a leitura do PT100 (~75 ms). O SD trava até ~1,7 s quando o cartão sai, então foi para uma tarefa própria |
 
 ## Estrutura
 

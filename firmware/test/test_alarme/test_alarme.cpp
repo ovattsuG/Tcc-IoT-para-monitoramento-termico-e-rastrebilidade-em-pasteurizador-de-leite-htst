@@ -306,6 +306,28 @@ void test_botao_preso_no_boot_nao_entra_em_limpeza() {
   TEST_ASSERT_TRUE(alarme.avaliar(e, 3000).modoLimpeza);
 }
 
+// ---------- Bloco 4, tarefa 2: FALHA_SD (FW-12) ----------
+
+// Seção 5: falha do SD é só registro e envio; a torre não muda
+void test_falha_sd_e_verde() {
+  Alarme alarme(P);
+  Entradas e = normal();
+  e.sdFalha = true;
+  Resultado r = alarme.avaliar(e, 0);
+  TEST_ASSERT_EQUAL_UINT16(FALHA_SD, r.condicoes);
+  TEST_ASSERT_FALSE(r.torreVermelha);
+}
+
+void test_falha_sd_nao_esconde_pressao() {
+  Alarme alarme(P);
+  Entradas e = normal();
+  e.sdFalha = true;
+  e.pressaoOk = false;
+  Resultado r = alarme.avaliar(e, 0);
+  TEST_ASSERT_EQUAL_UINT16(FALHA_SD | PRESSAO, r.condicoes);
+  TEST_ASSERT_TRUE(r.torreVermelha);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_tudo_normal_e_ok_verde);
@@ -333,5 +355,7 @@ int main() {
   RUN_TEST(test_aperto_durante_limpeza_e_ignorado);
   RUN_TEST(test_botao_segurado_nao_reentra_em_limpeza);
   RUN_TEST(test_botao_preso_no_boot_nao_entra_em_limpeza);
+  RUN_TEST(test_falha_sd_e_verde);
+  RUN_TEST(test_falha_sd_nao_esconde_pressao);
   return UNITY_END();
 }

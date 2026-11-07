@@ -2,6 +2,7 @@
 // FW-01: lê T1 e T2 (PT100 + MAX31865) a cada 1 s. FW-03/04/06: avalia as regras da seção 5 e comanda a torre.
 // FW-05: relé K1 desenergizado do reset até a primeira avaliação verde.
 // Seção 4: parâmetros carregados da NVS e ajustáveis pela Serial (get / set NOME valor).
+// FW-07/08/09/10/12: registro da seção 7 (seq, hora UTC, inválida sem valor) gravado no MicroSD.
 #include <Arduino.h>
 #include <Ticker.h>
 #include "config.h"
@@ -11,6 +12,9 @@
 #include "parametros_nvs.h"
 #include "comandos_serial.h"
 #include "alarme.h"
+#include "sequencia.h"
+#include "registro.h"
+#include "cartao_sd.h"
 #include <RTClib.h>
 #include <WiFi.h>
 #include <esp_sntp.h>
@@ -21,6 +25,7 @@ Configuracao cfg = configuracaoPadrao();
 SensorPT100 sensorT1(PINO_CS_T1, FIOS_PT100);
 SensorPT100 sensorT2(PINO_CS_T2, FIOS_PT100);
 Alarme alarme(cfg.alarme);
+Sequencia sequencia(0, BLOCO_SEQ);   // trocada no setup() pelo valor da NVS
 RTC_DS3231 rtc;
 bool rtcPresente = false;
 bool horaOk = false;   // FW-08: false = RTC não responde ou perdeu a hora; o registro sai sem hora
@@ -54,6 +59,7 @@ void setup() {
 
   Serial.begin(115200);
   carregarConfiguracao(cfg);
+  sequencia = Sequencia(carregarReservaSeq(), BLOCO_SEQ);
   imprimirConfiguracao(cfg);
 
   pinMode(PINO_FDV, INPUT_PULLUP);
@@ -82,6 +88,7 @@ void setup() {
   WiFi.begin(WIFI_SSID, WIFI_SENHA);
   sntp_set_time_sync_notification_cb(aoSincronizarNtp);
   configTime(0, 0, "pool.ntp.org");   // fuso 0 = UTC
+  iniciarTarefaSd();   // FW-09/12: o cartão é tratado em outra tarefa, sem travar o loop()
   Serial.println("setup ok: K1 espera a primeira avaliacao");
 }
 
@@ -94,6 +101,7 @@ Resultado anterior{0, true, false, false, false};
 // Última leitura e último resultado, para o registro imprimir no período dele.
 LeituraTemperatura t1{};
 LeituraTemperatura t2{};
+Entradas ent{};
 Resultado res{0, true, false, false, false};
 
 uint32_t marcaLeituraMs = 0;     // grade do ciclo de leitura: 1000, 2000, 3000...
@@ -134,7 +142,8 @@ void loop() {
     t1 = sensorT1.ler();
     t2 = sensorT2.ler();
 
-    Entradas e;
+    Entradas e{};   // {} zera tudo: campo esquecido vira false/0, nunca lixo
+    e.sdFalha = sdComFalha();
     e.pressaoOk = !pressAgora;   // contato fechado (pressão OK) puxa o pino para 0
     e.t1 = t1.celsius;
     e.t1Falha = t1.falha;
@@ -145,6 +154,7 @@ void loop() {
 
     alarme.definirParametros(cfg.alarme);
     res = alarme.avaliar(e, agora);
+    ent = e;
     digitalWrite(PINO_K1, res.torreVermelha ? LOW : HIGH);   // segurança positiva: verde = energizado
 
     if (res.condicoes != anterior.condicoes || res.torreVermelha != anterior.torreVermelha ||
@@ -160,16 +170,26 @@ void loop() {
     marcaMs += cfg.periodoRegistroMs;  // grade fixa: atraso não se acumula
     uint32_t dt = agora - ultimoRegistroMs;
     ultimoRegistroMs = agora;
-    // FW-07 / seção 7: leitura inválida sai sem valor (campo vazio), nunca um número falso.
-    char t1Txt[8] = "";
-    char t2Txt[8] = "";
-    if (res.t1Valida) snprintf(t1Txt, sizeof(t1Txt), "%.1f", t1.celsius);
-    if (res.t2Valida) snprintf(t2Txt, sizeof(t2Txt), "%.1f", t2.celsius);
+    // FW-10: a reserva vai para a NVS ANTES de usar o número; se falhar, tenta de novo no próximo registro.
+    if (sequencia.precisaGravar()) {
+      if (salvarReservaSeq(sequencia.reservaParaGravar())) sequencia.reservaGravada();
+      else Serial.println("seq: erro ao gravar a reserva na NVS; o numero pode repetir apos reinicio");
+    }
+
     // FW-08: hora UTC em ISO 8601; vazia se o RTC não tem hora confiável (nunca uma hora falsa).
     // shortcut: rtc.now() não acusa erro de I2C se o módulo cair depois do boot; checar no autoteste (FW-14).
     char hora[24] = "";
     if (horaOk) snprintf(hora, sizeof(hora), "%sZ", rtc.now().timestamp().c_str());
-    Serial.printf("%s [%lu ms] dt=%lu | T1=%s t1_valida=%d falha=0x%02X | T2=%s t2_valida=%d falha=0x%02X | cond=0x%02X\n",
-                  hora, agora, dt, t1Txt, res.t1Valida, t1.falha, t2Txt, res.t2Valida, t2.falha, res.condicoes);
+
+    // Seção 7: leitura inválida sai sem valor (FW-07); a validade vem do alarme, a mesma regra da torre.
+    Registro reg{sequencia.proximo(), hora, t1.celsius, res.t1Valida, t2.celsius, res.t2Valida,
+                 ent.fdv, ent.pressaoOk, res.modoLimpeza, res.condicoes};
+    char linha[160];
+    if (formatarCsv(reg, linha, sizeof(linha)) == 0) {
+      Serial.println("registro: linha nao coube; nada gravado");
+    } else {
+      if (!enfileirarLinhaSd(hora, linha)) Serial.println("SD: fila cheia; linha descartada");   // FW-09 / FW-12
+      Serial.printf("[%lu ms] dt=%lu falha1=0x%02X falha2=0x%02X | %s\n", agora, dt, t1.falha, t2.falha, linha);
+    }
   }
 }

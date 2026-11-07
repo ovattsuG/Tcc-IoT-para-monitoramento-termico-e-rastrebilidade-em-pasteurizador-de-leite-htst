@@ -11,6 +11,7 @@ enum Condicao : uint16_t {
   SUBTEMP_SEM_DESVIO = 1 << 2,
   FALHA_T1           = 1 << 3,
   FALHA_T2           = 1 << 4,
+  FALHA_SD           = 1 << 5,   // FW-12: só registro e envio, torre verde
 };
 
 enum class Fdv : uint8_t { DIRETO, DESVIO };
@@ -33,6 +34,7 @@ struct Entradas {
   uint8_t t2Falha;  // registrador de falhas do MAX31865 #2
   Fdv fdv;          // já traduzido do pino (D1)
   bool botaoLimpeza;  // BTN_LIMP já filtrado: true = apertado
+  bool sdFalha;       // cartão ausente, cheio ou erro de gravação (FW-12); omitido = false
 };
 
 struct Resultado {

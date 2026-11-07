@@ -32,6 +32,27 @@ void carregarConfiguracao(Configuracao& cfg) {
   }
 }
 
+static const char* CHAVE_SEQ = "seq";
+
+uint32_t carregarReservaSeq() {
+  Preferences prefs;
+  if (!prefs.begin(ESPACO, false)) {
+    Serial.println("seq: erro ao abrir a NVS; comecando de 0");
+    return 0;
+  }
+  uint32_t reserva = prefs.getUInt(CHAVE_SEQ, 0);
+  prefs.end();
+  return reserva;
+}
+
+bool salvarReservaSeq(uint32_t reserva) {
+  Preferences prefs;
+  if (!prefs.begin(ESPACO, false)) return false;
+  bool ok = prefs.putUInt(CHAVE_SEQ, reserva) == sizeof(reserva);
+  prefs.end();
+  return ok;
+}
+
 bool salvarConfiguracao(const Configuracao& cfg) {
   Preferences prefs;
   if (!prefs.begin(ESPACO, false)) return false;

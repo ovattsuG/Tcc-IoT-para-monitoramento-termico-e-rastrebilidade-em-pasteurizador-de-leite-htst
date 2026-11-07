@@ -14,6 +14,17 @@ constexpr uint8_t PINO_BTN_LIMP = 34;  // FW-06: botão do modo limpeza; só ent
 // se o registro ficar lento, o alarme não pode ficar junto.
 constexpr uint32_t PERIODO_LEITURA_MS = 1000;
 
+// FW-09: MicroSD no HSPI (Anexo A da spec). O GPIO 15 também é pino de boot do ESP32.
+constexpr uint8_t PINO_SD_SCK  = 14;
+constexpr uint8_t PINO_SD_MISO = 32;
+constexpr uint8_t PINO_SD_MOSI = 13;
+constexpr uint8_t PINO_SD_CS   = 15;
+constexpr uint32_t PERIODO_RETENTATIVA_SD_MS = 30000;   // FW-12: com falha, tenta reabrir o cartão a cada 30 s
+constexpr uint32_t TAMANHO_FILA_SD = 10;                // linhas esperando a tarefa do SD (~10 s de folga)
+
+// FW-10: "seq" reservado na NVS de 100 em 100 (1 gravação a cada ~100 s, não a cada registro).
+constexpr uint32_t BLOCO_SEQ = 100;
+
 constexpr uint32_t PERIODO_AMOSTRA_MS = 10;   // de quanto em quanto tempo lê as entradas
 constexpr uint32_t TEMPO_DEBOUNCE_MS  = 100;  // FW-02: tempo parado para aceitar uma mudança
 
