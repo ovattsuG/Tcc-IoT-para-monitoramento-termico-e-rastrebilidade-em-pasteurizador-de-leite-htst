@@ -1,3 +1,4 @@
+// PT100 + MAX31865 (FW-01) com teste de eco no início e enquanto o chip não responder (FW-14). Interface em temperatura.h.
 #include "temperatura.h"
 #include "config.h"
 
@@ -16,11 +17,14 @@ bool SensorPT100::iniciar() {
                   max_.getUpperThreshold() == 0x5678;
   // Limites abertos: senão o chip acusaria falha fora de 0x1234..0x5678.
   max_.setThresholds(0x0000, 0xFFFF);
+  responde_ = responde;
   return responde;
 }
 
 // Bloqueia ~75 ms (conversão da MAX31865). Não decide alarme: só informa.
 LeituraTemperatura SensorPT100::ler() {
+  // FW-14: sem eco, um fio solto pode ler um número dentro da faixa; refaz o begin() + eco até o chip responder.
+  if (!responde_ && !iniciar()) return {0.0f, FALHA_SEM_RESPOSTA};
   LeituraTemperatura leitura;
   leitura.celsius = max_.temperature(RESISTENCIA_NOMINAL_PT100, RESISTENCIA_REF);
   leitura.falha = max_.readFault();

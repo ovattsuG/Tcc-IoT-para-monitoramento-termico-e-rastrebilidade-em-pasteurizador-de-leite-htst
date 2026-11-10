@@ -4,8 +4,8 @@
 // então um cartão travado ou removido não atrasa as regras de alarme nem a torre (FW-04, FW-11).
 #pragma once
 
-// Chamar no setup(): cria a fila e a tarefa, que monta o cartão.
-void iniciarTarefaSd();
+// Chamar no setup(): monta o cartão (FW-14), cria a fila e a tarefa. true = cartão montado.
+bool iniciarTarefaSd();
 
 // Põe o registro na fila sem esperar. horaUtc "2026-11-07T..." → /20261107.csv; "" → /SEMHORA.csv.
 // json "" = só CSV (o JSON não coube). false = fila cheia (cartão travado há vários segundos): descartado, vira FALHA_SD.

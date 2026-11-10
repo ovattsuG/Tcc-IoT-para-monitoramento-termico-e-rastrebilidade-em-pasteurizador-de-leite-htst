@@ -103,3 +103,59 @@ flowchart TD
 Três "linhas de execução": o Ticker (entradas a cada 10 ms), a tarefa de rede do ESP32 (Wi-Fi e NTP) e o `loop()`. As duas primeiras só deixam valores prontos (`volatile`); quem decide e mexe no hardware (K1, RTC) é sempre o `loop()`.
 
 Ainda não existe: SD, MQTT e reenvio (bloco 4), watchdog e autoteste (bloco 5).
+
+
+## Blocos 4 e 5 — SD, MQTT, reenvio, watchdog e autoteste (FW-09 a FW-14) · 07/11/2026
+
+O bloco 4 ainda não foi fechado (falta a tarefa 7: 24 h com SD e queda longa de rede); o diagrama mostra o firmware como está ao fim do bloco 5.
+
+```mermaid
+flowchart TD
+    subgraph Setup["setup() — uma vez ao ligar (K1 desligado o tempo todo)"]
+        S0[K1 = LOW antes de virar saída] --> S1[Serial; motivo do reinício<br/>watchdog → wdtPendente]
+        S1 --> S2[Configuracao e reserva do seq da NVS]
+        S2 --> S3[entradas + Ticker 10 ms]
+        S3 --> S4[autoteste: eco T1 e T2, RTC, ...]
+        S4 --> S5[Wi-Fi, NTP e MQTT em 2º plano]
+        S5 --> S6[monta o cartão, confere /PENDENTES.txt<br/>cria a fila e a tarefa do SD]
+        S6 --> S7[linha autoteste: T1 / T2 / RTC / SD]
+        S7 --> S8[watchdog 2 s: tira IDLE0, deinit, init,<br/>inscreve o loop, devolve IDLE0]
+    end
+
+    subgraph Loop["loop() — núcleo 1"]
+        L0([esp_task_wdt_reset]) --> L1[Serial: get / set / travar]
+        L1 --> L2[NTP → RTC]
+        L2 --> L3{passou 1 s?}
+        L3 -- sim --> L4[lê T1, T2<br/>sem eco → falha 0xFF]
+        L4 --> L5[Entradas + sdFalha + reinicioWdt]
+        L5 --> L6[lib/alarme avaliar]
+        L6 --> L7{1ª avaliação?}
+        L7 -- sim --> L8[torre vermelha]
+        L7 -- não --> L9[K1 segue o alarme]
+        L8 --> L10
+        L9 --> L10{passou PERIODO_REGISTRO?}
+        L3 -- não --> L10
+        L10 -- sim --> L11[seq; hora do RTC se isValid, senão vazia]
+        L11 --> L12[CSV + JSON → fila do SD, não espera<br/>entregue → wdtPendente = false]
+        L12 --> L0
+        L10 -- não --> L0
+    end
+
+    subgraph SD["tarefa do SD — núcleo 0"]
+        D1[recebe da fila] --> D2[grava o CSV do dia<br/>erro → FALHA_SD]
+        D2 --> D3{pendências ou sem broker?}
+        D3 -- não --> D4[publish ao vivo QoS 1]
+        D3 -- sim --> D5[fim de /PENDENTES.txt]
+        D6[passoDeEnvio: uma por vez,<br/>avança no PUBACK, posição na NVS]
+    end
+
+    subgraph WDT["watchdog de tarefas"]
+        W1{loop sem reset por 2 s?} -- sim --> W2[pânico → reinício<br/>K1 desligado]
+    end
+
+    L12 -. fila .-> D1
+    L0 -. alimenta .-> W1
+    W2 -. boot .-> S0
+```
+
+Quatro "linhas de execução": Ticker (entradas), rede (Wi-Fi, NTP, MQTT), tarefa do SD (cartão e envio) e `loop()` (regras e torre). Só o `loop()` mexe no K1; tudo que pode esperar (cartão, rede) está fora dele, e o watchdog garante que, se o `loop()` parar, o nó reinicia com a torre vermelha.

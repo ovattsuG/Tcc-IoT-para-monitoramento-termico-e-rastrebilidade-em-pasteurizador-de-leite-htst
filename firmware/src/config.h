@@ -38,3 +38,5 @@ constexpr float RESISTENCIA_REF = 430.0f;            // resistor "431" da placa 
 // FW-11: reenvio das pendências (detalhe interno, Anexo A).
 constexpr uint32_t TEMPO_PUBACK_MS = 10000;           // sem PUBACK nesse tempo, reenvia a mesma linha
 constexpr uint32_t PERIODO_GRAVA_POSICAO_MS = 60000;  // poupa a flash; após reinício reenvia no máximo ~60 s
+// FW-13: o loop() travado por mais disto reinicia o nó (valor da spec, não é parâmetro da seção 4).
+constexpr uint32_t TEMPO_WATCHDOG_S = 2;

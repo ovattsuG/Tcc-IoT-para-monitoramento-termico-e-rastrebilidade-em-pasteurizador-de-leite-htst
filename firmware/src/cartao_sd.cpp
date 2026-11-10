@@ -20,7 +20,7 @@ static const char* ARQ_PENDENTES = "/PENDENTES.txt";
 
 static SPIClass hspi(HSPI);
 static QueueHandle_t fila = nullptr;
-static volatile bool falha = true;   // até montar o cartão, não há onde gravar
+static volatile bool falha = true;   // trocada no iniciarTarefaSd() pelo resultado da montagem
 
 // Estado do reenvio (FW-11): só esta tarefa mexe nele.
 static bool haPendencias = false;
@@ -155,11 +155,10 @@ static void passoDeEnvio(bool montado) {
 }
 
 // Roda no núcleo 0, separada do loop(): pode travar nas tentativas internas da biblioteca sem afetar a torre.
+static bool montadoNoBoot = false;
+
 static void tarefaSd(void*) {
-  hspi.begin(PINO_SD_SCK, PINO_SD_MISO, PINO_SD_MOSI, PINO_SD_CS);
-  posicao = posicaoGravada = carregarPosicaoEnvio();
-  bool montado = montar();
-  if (montado) conferirPendencias();
+  bool montado = montadoNoBoot;
   uint32_t ultimaTentativaMs = millis();
   ItemFila item;
   for (;;) {
@@ -191,10 +190,17 @@ static void tarefaSd(void*) {
   }
 }
 
-void iniciarTarefaSd() {
+bool iniciarTarefaSd() {
+  // FW-14: monta ainda no setup() (K1 desligado), para o 1º registro já saber se há cartão. Sem cartão leva ~0,6 s.
+  hspi.begin(PINO_SD_SCK, PINO_SD_MISO, PINO_SD_MOSI, PINO_SD_CS);
+  posicao = posicaoGravada = carregarPosicaoEnvio();
+  montadoNoBoot = montar();
+  if (montadoNoBoot) conferirPendencias();
+  falha = !montadoNoBoot;
   fila = xQueueCreate(TAMANHO_FILA_SD, sizeof(ItemFila));
   // 6 KB: além do SD, o JSON da pendência (320 B) fica na pilha.
   xTaskCreatePinnedToCore(tarefaSd, "sd", 6144, nullptr, 1, nullptr, 0);
+  return montadoNoBoot;
 }
 
 bool enfileirarLinhaSd(const char* horaUtc, const char* linha, const char* json) {

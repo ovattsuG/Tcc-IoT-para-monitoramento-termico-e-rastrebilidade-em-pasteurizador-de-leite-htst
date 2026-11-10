@@ -22,6 +22,14 @@ static const char* textoErro(ResultadoComando r) {
 }
 
 static void tratarLinha(const char* linha, Configuracao& cfg) {
+  // FW-13: teste de bancada do watchdog; prende o loop() sem ceder a vez, como um travamento de verdade.
+  if (strcmp(linha, "travar") == 0) {
+    Serial.printf("[%lu ms] travar: loop() preso; o watchdog deve reiniciar o no em ~2 s\n", millis());
+    Serial.flush();
+    volatile bool preso = true;   // volatile: o compilador não pode apagar o laço
+    while (preso) {
+    }
+  }
   if (strcmp(linha, "get") == 0) {
     imprimirConfiguracao(cfg);
     return;

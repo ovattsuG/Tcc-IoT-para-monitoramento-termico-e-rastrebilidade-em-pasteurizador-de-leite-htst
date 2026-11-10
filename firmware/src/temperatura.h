@@ -9,6 +9,9 @@ struct LeituraTemperatura {
   uint8_t falha;  // 0 = ok; senão, código de falha da MAX31865
 };
 
+// FW-14: o chip não respondeu ao teste de eco (todos os bits ligados: nunca é uma leitura válida).
+constexpr uint8_t FALHA_SEM_RESPOSTA = 0xFF;
+
 class SensorTemperatura {
 public:
   virtual ~SensorTemperatura() = default;
@@ -25,4 +28,5 @@ public:
 private:
   Adafruit_MAX31865 max_;
   uint8_t fios_;
+  bool responde_ = false;   // FW-14: resultado do último teste de eco
 };
