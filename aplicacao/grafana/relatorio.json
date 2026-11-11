@@ -1,0 +1,773 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "htst-relatorio",
+    "namespace": "default"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "query": {
+            "kind": "DataQuery",
+            "group": "grafana",
+            "version": "v0",
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "spec": {}
+          },
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "builtIn": true
+        }
+      },
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "query": {
+            "kind": "DataQuery",
+            "group": "grafana-postgresql-datasource",
+            "version": "v0",
+            "datasource": {
+              "name": "fg3xub4ujtiwwf"
+            },
+            "spec": {
+              "dataset": "htst",
+              "editorMode": "code",
+              "format": "table",
+              "rawQuery": true,
+              "rawSql": "WITH l AS (\n  SELECT device_id, timestamp_utc AS t, alarmes,\n         ROW_NUMBER() OVER (PARTITION BY device_id ORDER BY timestamp_utc) AS n\n  FROM leituras\n  WHERE $__timeFilter(timestamp_utc)\n), c AS (\n  SELECT device_id, t, n, unnest(string_to_array(NULLIF(alarmes, ''), '|')) AS condicao FROM l\n), g AS (\n  SELECT device_id, condicao, t,\n         n - ROW_NUMBER() OVER (PARTITION BY device_id, condicao ORDER BY n) AS grupo\n  FROM c\n), ocorrencias AS (\n  SELECT condicao, min(t) AS inicio, max(t) + interval '1 second' AS fim\n  FROM g GROUP BY device_id, condicao, grupo\n)\nSELECT inicio AS time, fim AS timeend, condicao AS text\nFROM ocorrencias\nWHERE condicao IN ('SUBTEMP_SEM_DESVIO','PRESSAO','FALHA_T1')"
+            }
+          },
+          "enable": true,
+          "hide": false,
+          "iconColor": "red",
+          "name": "Alarmes"
+        }
+      },
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "query": {
+            "kind": "DataQuery",
+            "group": "grafana-postgresql-datasource",
+            "version": "v0",
+            "datasource": {
+              "name": "fg3xub4ujtiwwf"
+            },
+            "spec": {
+              "dataset": "htst",
+              "editorMode": "code",
+              "format": "table",
+              "rawQuery": true,
+              "rawSql": "WITH l AS (\n  SELECT device_id, timestamp_utc AS t, alarmes,\n         ROW_NUMBER() OVER (PARTITION BY device_id ORDER BY timestamp_utc) AS n\n  FROM leituras\n  WHERE $__timeFilter(timestamp_utc)\n), c AS (\n  SELECT device_id, t, n, unnest(string_to_array(NULLIF(alarmes, ''), '|')) AS condicao FROM l\n), g AS (\n  SELECT device_id, condicao, t,\n         n - ROW_NUMBER() OVER (PARTITION BY device_id, condicao ORDER BY n) AS grupo\n  FROM c\n), ocorrencias AS (\n  SELECT condicao, min(t) AS inicio, max(t) + interval '1 second' AS fim\n  FROM g GROUP BY device_id, condicao, grupo\n)\nSELECT inicio AS time, fim AS timeend, condicao AS text\nFROM ocorrencias\nWHERE condicao IN ('FALHA_T2','WDT','FALHA_SD')"
+            }
+          },
+          "enable": true,
+          "hide": false,
+          "iconColor": "yellow",
+          "name": "Avisos"
+        }
+      }
+    ],
+    "cursorSync": "Crosshair",
+    "editable": true,
+    "elements": {
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "id": 1,
+          "title": "T1 — pasteurização (produção)",
+          "description": "SW-10: mínimo, máximo e média no período, só leituras válidas em modo PRODUÇÃO.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "fg3xub4ujtiwwf"
+                      },
+                      "spec": {
+                        "dataset": "htst",
+                        "editorMode": "code",
+                        "format": "table",
+                        "rawQuery": true,
+                        "rawSql": "SELECT min(t1_c) AS \"Mínimo\", max(t1_c) AS \"Máximo\", avg(t1_c) AS \"Média\"\nFROM leituras\nWHERE $__timeFilter(timestamp_utc) AND modo = 'PRODUCAO'"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.3.1",
+            "spec": {
+              "options": {
+                "reduceOptions": {
+                  "values": false,
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/"
+                },
+                "orientation": "horizontal",
+                "textMode": "value_and_name",
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "wideLayout": true,
+                "showPercentChange": false
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "celsius",
+                  "decimals": 1,
+                  "color": {
+                    "mode": "fixed",
+                    "fixedColor": "text"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "id": 2,
+          "title": "T2 — saída (produção)",
+          "description": "SW-10: mínimo, máximo e média no período, só leituras válidas em modo PRODUÇÃO.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "fg3xub4ujtiwwf"
+                      },
+                      "spec": {
+                        "dataset": "htst",
+                        "editorMode": "code",
+                        "format": "table",
+                        "rawQuery": true,
+                        "rawSql": "SELECT min(t2_c) AS \"Mínimo\", max(t2_c) AS \"Máximo\", avg(t2_c) AS \"Média\"\nFROM leituras\nWHERE $__timeFilter(timestamp_utc) AND modo = 'PRODUCAO'"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.3.1",
+            "spec": {
+              "options": {
+                "reduceOptions": {
+                  "values": false,
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/"
+                },
+                "orientation": "horizontal",
+                "textMode": "value_and_name",
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "wideLayout": true,
+                "showPercentChange": false
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "celsius",
+                  "decimals": 1,
+                  "color": {
+                    "mode": "fixed",
+                    "fixedColor": "text"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "id": 3,
+          "title": "Tempo com T1 abaixo de 72 °C (produção)",
+          "description": "SW-10: cada leitura vale 1 s. Com desvio = a válvula desviou o leite (correto). Sem desvio = leite abaixo de 72 °C seguiu adiante.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "fg3xub4ujtiwwf"
+                      },
+                      "spec": {
+                        "dataset": "htst",
+                        "editorMode": "code",
+                        "format": "table",
+                        "rawQuery": true,
+                        "rawSql": "SELECT count(*) FILTER (WHERE fdv = 'DESVIO') AS \"Com desvio\",\n       count(*) FILTER (WHERE fdv = 'DIRETO') AS \"Sem desvio\"\nFROM leituras\nWHERE $__timeFilter(timestamp_utc) AND modo = 'PRODUCAO' AND t1_valida AND t1_c < 72"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.3.1",
+            "spec": {
+              "options": {
+                "reduceOptions": {
+                  "values": false,
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/"
+                },
+                "orientation": "horizontal",
+                "textMode": "value_and_name",
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "wideLayout": true,
+                "showPercentChange": false
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "s",
+                  "decimals": 0,
+                  "color": {
+                    "mode": "fixed",
+                    "fixedColor": "blue"
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Sem desvio"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "thresholds"
+                        }
+                      },
+                      {
+                        "id": "thresholds",
+                        "value": {
+                          "mode": "absolute",
+                          "steps": [
+                            {
+                              "value": 0,
+                              "color": "green"
+                            },
+                            {
+                              "value": 1,
+                              "color": "red"
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "id": 4,
+          "title": "Temperaturas no período",
+          "links": [],
+          "description": "SW-09: leitura inválida aparece como lacuna; faixas vermelhas = alarmes, amarelas = avisos (liga e desliga no topo).",
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "fg3xub4ujtiwwf"
+                      },
+                      "spec": {
+                        "dataset": "htst",
+                        "editorMode": "code",
+                        "format": "table",
+                        "rawQuery": true,
+                        "rawSql": "SELECT timestamp_utc AS time, t1_c AS \"T1\", t2_c AS \"T2\"\nFROM leituras\nWHERE $__timeFilter(timestamp_utc)\nORDER BY 1"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.3.1",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "celsius",
+                  "decimals": 1,
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 72,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "custom": {
+                    "drawStyle": "line",
+                    "lineInterpolation": "linear",
+                    "lineWidth": 2,
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "showPoints": "never",
+                    "pointSize": 3,
+                    "spanNulls": false,
+                    "insertNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "line"
+                    },
+                    "axisBorderShow": true,
+                    "axisPlacement": "auto",
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "id": 5,
+          "title": "Ocorrências",
+          "links": [],
+          "description": "SW-10: cada condição com início, fim e duração. Exportar: menu do painel → Inspect → Data → Download CSV.",
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "fg3xub4ujtiwwf"
+                      },
+                      "spec": {
+                        "dataset": "htst",
+                        "editorMode": "code",
+                        "format": "table",
+                        "rawQuery": true,
+                        "rawSql": "WITH l AS (\n  SELECT device_id, timestamp_utc AS t, alarmes,\n         ROW_NUMBER() OVER (PARTITION BY device_id ORDER BY timestamp_utc) AS n\n  FROM leituras\n  WHERE $__timeFilter(timestamp_utc)\n), c AS (\n  SELECT device_id, t, n, unnest(string_to_array(NULLIF(alarmes, ''), '|')) AS condicao FROM l\n), g AS (\n  SELECT device_id, condicao, t,\n         n - ROW_NUMBER() OVER (PARTITION BY device_id, condicao ORDER BY n) AS grupo\n  FROM c\n), ocorrencias AS (\n  SELECT condicao, min(t) AS inicio, max(t) + interval '1 second' AS fim\n  FROM g GROUP BY device_id, condicao, grupo\n)\nSELECT condicao AS \"Condição\", inicio AS \"Início\", fim AS \"Fim\",\n       EXTRACT(EPOCH FROM fim - inicio) AS \"Duração\"\nFROM ocorrencias\nORDER BY inicio"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "table",
+            "version": "13.3.1",
+            "spec": {
+              "options": {
+                "showHeader": true,
+                "cellHeight": "sm",
+                "footer": {
+                  "show": false,
+                  "reducer": [
+                    "sum"
+                  ],
+                  "countRows": false,
+                  "fields": ""
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "inspect": false
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Duração"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "dtdurations"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "panel-6": {
+        "kind": "Panel",
+        "spec": {
+          "id": 6,
+          "title": "Leituras (datalog)",
+          "links": [],
+          "description": "SW-10: uma linha por leitura, hora de Brasília. Filtre pelo \"Mostrar\" no topo, pelo ícone de funil em cada coluna, ou arrastando no gráfico acima. Exportar: menu do painel → Inspect → Data → Download CSV.",
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "fg3xub4ujtiwwf"
+                      },
+                      "spec": {
+                        "dataset": "htst",
+                        "editorMode": "code",
+                        "format": "table",
+                        "rawQuery": true,
+                        "rawSql": "SELECT to_char(timestamp_utc AT TIME ZONE 'America/Sao_Paulo', 'DD.MM.YY') AS \"Data\",\n       to_char(timestamp_utc AT TIME ZONE 'America/Sao_Paulo', 'HH24:MI:SS') AS \"Horário\",\n       t1_c AS \"Pasteurizacao\", t2_c AS \"Saida\"\nFROM leituras\nWHERE $__timeFilter(timestamp_utc)\n  AND CASE '$filtro'\n        WHEN 'abaixo72' THEN t1_valida AND t1_c < 72\n        WHEN 'condicao' THEN alarmes <> ''\n        WHEN 'invalida' THEN NOT (t1_valida AND t2_valida)\n        ELSE true END\nORDER BY timestamp_utc"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "table",
+            "version": "13.3.1",
+            "spec": {
+              "options": {
+                "showHeader": true,
+                "cellHeight": "sm",
+                "footer": {
+                  "show": false,
+                  "reducer": [
+                    "sum"
+                  ],
+                  "countRows": false,
+                  "fields": ""
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 1,
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "inspect": false,
+                    "filterable": true
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 0,
+              "y": 0,
+              "width": 8,
+              "height": 5,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-1"
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 8,
+              "y": 0,
+              "width": 8,
+              "height": 5,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-2"
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 16,
+              "y": 0,
+              "width": 8,
+              "height": 5,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-3"
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 0,
+              "y": 5,
+              "width": 24,
+              "height": 11,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-4"
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 0,
+              "y": 16,
+              "width": 24,
+              "height": 10,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-6"
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 0,
+              "y": 26,
+              "width": 24,
+              "height": 10,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-5"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "links": [
+      {
+        "title": "Dashboards HTST",
+        "type": "dashboards",
+        "tags": [
+          "htst"
+        ],
+        "asDropdown": false,
+        "icon": "external link",
+        "tooltip": "",
+        "url": "",
+        "targetBlank": false,
+        "includeVars": false,
+        "keepTime": false
+      }
+    ],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "htst"
+    ],
+    "timeSettings": {
+      "timezone": "America/Sao_Paulo",
+      "from": "now/d",
+      "to": "now",
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "hideTimepicker": false,
+      "fiscalYearStartMonth": 0
+    },
+    "title": "HTST - Relatório",
+    "variables": [
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "name": "filtro",
+          "label": "Mostrar",
+          "description": "Filtra a tabela de leituras.",
+          "query": "Todas as leituras : todas, T1 abaixo de 72 °C : abaixo72, Com alguma condição : condicao, Leitura inválida : invalida",
+          "current": {
+            "text": "Todas as leituras",
+            "value": "todas"
+          },
+          "options": [
+            {
+              "text": "Todas as leituras",
+              "value": "todas",
+              "selected": true
+            },
+            {
+              "text": "T1 abaixo de 72 °C",
+              "value": "abaixo72",
+              "selected": false
+            },
+            {
+              "text": "Com alguma condição",
+              "value": "condicao",
+              "selected": false
+            },
+            {
+              "text": "Leitura inválida",
+              "value": "invalida",
+              "selected": false
+            }
+          ],
+          "multi": false,
+          "includeAll": false,
+          "hide": "dontHide",
+          "skipUrlSync": false,
+          "allowCustomValue": false
+        }
+      }
+    ]
+  }
+}

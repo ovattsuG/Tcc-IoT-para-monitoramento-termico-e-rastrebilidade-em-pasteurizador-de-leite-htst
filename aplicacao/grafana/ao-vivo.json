@@ -808,7 +808,22 @@
         ]
       }
     },
-    "links": [],
+    "links": [
+      {
+        "title": "Dashboards HTST",
+        "type": "dashboards",
+        "tags": [
+          "htst"
+        ],
+        "asDropdown": false,
+        "icon": "external link",
+        "tooltip": "",
+        "url": "",
+        "targetBlank": false,
+        "includeVars": false,
+        "keepTime": false
+      }
+    ],
     "liveNow": false,
     "preload": false,
     "tags": [
