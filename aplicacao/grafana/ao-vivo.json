@@ -1,0 +1,840 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "adxxl9g",
+    "namespace": "default",
+    "uid": "cdeeaf97-561f-49b2-ac2f-2666cc07e956"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "query": {
+            "kind": "DataQuery",
+            "group": "grafana",
+            "version": "v0",
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "spec": {}
+          },
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "builtIn": true
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "editable": true,
+    "elements": {
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "id": 1,
+          "title": "Temperaturas",
+          "links": [],
+          "description": "SW-06: T1 (pasteurização) e T2 (saída), com a linha de 72 °C. Leitura inválida aparece como lacuna (SW-09).",
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "fg3xub4ujtiwwf"
+                      },
+                      "spec": {
+                        "dataset": "htst",
+                        "editorMode": "code",
+                        "format": "table",
+                        "rawQuery": true,
+                        "rawSql": "SELECT timestamp_utc AS time, t1_c AS \"T1\", t2_c AS \"T2\"\nFROM leituras\nWHERE $__timeFilter(timestamp_utc)\nORDER BY 1"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.3.1",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "celsius",
+                  "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 72,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "drawStyle": "line",
+                    "lineInterpolation": "linear",
+                    "lineWidth": 2,
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "showPoints": "never",
+                    "pointSize": 3,
+                    "spanNulls": false,
+                    "insertNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "line"
+                    },
+                    "axisBorderShow": true,
+                    "axisPlacement": "auto",
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "id": 2,
+          "title": "Alarmes",
+          "description": "SW-07: vermelho = SUBTEMP_SEM_DESVIO, PRESSAO ou FALHA_T1; amarelo = FALHA_T2, WDT ou FALHA_SD; azul = SUBTEMP (desvio correto).",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "fg3xub4ujtiwwf"
+                      },
+                      "spec": {
+                        "dataset": "htst",
+                        "editorMode": "code",
+                        "format": "table",
+                        "rawQuery": true,
+                        "rawSql": "SELECT CASE\n  WHEN string_to_array(alarmes, '|') && ARRAY['SUBTEMP_SEM_DESVIO','PRESSAO','FALHA_T1'] THEN 3\n  WHEN string_to_array(alarmes, '|') && ARRAY['FALHA_T2','WDT','FALHA_SD'] THEN 2\n  WHEN alarmes <> '' THEN 1\n  ELSE 0 END AS nivel\nFROM leituras ORDER BY timestamp_utc DESC NULLS LAST LIMIT 1"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.3.1",
+            "spec": {
+              "options": {
+                "reduceOptions": {
+                  "values": false,
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/"
+                },
+                "orientation": "auto",
+                "textMode": "value",
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "wideLayout": true,
+                "showPercentChange": false
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "text"
+                      }
+                    ]
+                  },
+                  "mappings": [
+                    {
+                      "type": "value",
+                      "options": {
+                        "0": {
+                          "text": "OK",
+                          "color": "green",
+                          "index": 0
+                        },
+                        "1": {
+                          "text": "INFORMATIVO",
+                          "color": "blue",
+                          "index": 1
+                        },
+                        "2": {
+                          "text": "AVISO",
+                          "color": "yellow",
+                          "index": 2
+                        },
+                        "3": {
+                          "text": "ALARME",
+                          "color": "red",
+                          "index": 3
+                        }
+                      }
+                    }
+                  ]
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "id": 3,
+          "title": "Condições ativas",
+          "description": "Lista enviada pelo nó (campo alarmes).",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "fg3xub4ujtiwwf"
+                      },
+                      "spec": {
+                        "dataset": "htst",
+                        "editorMode": "code",
+                        "format": "table",
+                        "rawQuery": true,
+                        "rawSql": "SELECT CASE WHEN alarmes = '' THEN 'nenhuma' ELSE replace(alarmes, '|', ' · ') END AS condicoes\nFROM leituras ORDER BY timestamp_utc DESC NULLS LAST LIMIT 1"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.3.1",
+            "spec": {
+              "options": {
+                "reduceOptions": {
+                  "values": false,
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/"
+                },
+                "orientation": "auto",
+                "textMode": "value",
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "wideLayout": true,
+                "showPercentChange": false
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "fixed",
+                    "fixedColor": "transparent"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "text"
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "id": 4,
+          "title": "Válvula de desvio (FDV)",
+          "description": "Posição da válvula na última leitura.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "fg3xub4ujtiwwf"
+                      },
+                      "spec": {
+                        "dataset": "htst",
+                        "editorMode": "code",
+                        "format": "table",
+                        "rawQuery": true,
+                        "rawSql": "SELECT fdv\nFROM leituras ORDER BY timestamp_utc DESC NULLS LAST LIMIT 1"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.3.1",
+            "spec": {
+              "options": {
+                "reduceOptions": {
+                  "values": false,
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/"
+                },
+                "orientation": "auto",
+                "textMode": "value",
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "wideLayout": true,
+                "showPercentChange": false
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "text"
+                      }
+                    ]
+                  },
+                  "mappings": [
+                    {
+                      "type": "value",
+                      "options": {
+                        "DIRETO": {
+                          "text": "DIRETO",
+                          "color": "green",
+                          "index": 0
+                        },
+                        "DESVIO": {
+                          "text": "DESVIO",
+                          "color": "blue",
+                          "index": 1
+                        }
+                      }
+                    }
+                  ]
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "id": 5,
+          "title": "Pressão de ar",
+          "description": "Pressostato na última leitura.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "fg3xub4ujtiwwf"
+                      },
+                      "spec": {
+                        "dataset": "htst",
+                        "editorMode": "code",
+                        "format": "table",
+                        "rawQuery": true,
+                        "rawSql": "SELECT CASE WHEN pressao_ok THEN 1 ELSE 0 END AS pressao\nFROM leituras ORDER BY timestamp_utc DESC NULLS LAST LIMIT 1"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.3.1",
+            "spec": {
+              "options": {
+                "reduceOptions": {
+                  "values": false,
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/"
+                },
+                "orientation": "auto",
+                "textMode": "value",
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "wideLayout": true,
+                "showPercentChange": false
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "text"
+                      }
+                    ]
+                  },
+                  "mappings": [
+                    {
+                      "type": "value",
+                      "options": {
+                        "0": {
+                          "text": "FALHA",
+                          "color": "red",
+                          "index": 1
+                        },
+                        "1": {
+                          "text": "OK",
+                          "color": "green",
+                          "index": 0
+                        }
+                      }
+                    }
+                  ]
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-6": {
+        "kind": "Panel",
+        "spec": {
+          "id": 6,
+          "title": "Modo",
+          "description": "Produção ou limpeza (FW-06).",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "fg3xub4ujtiwwf"
+                      },
+                      "spec": {
+                        "dataset": "htst",
+                        "editorMode": "code",
+                        "format": "table",
+                        "rawQuery": true,
+                        "rawSql": "SELECT modo\nFROM leituras ORDER BY timestamp_utc DESC NULLS LAST LIMIT 1"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.3.1",
+            "spec": {
+              "options": {
+                "reduceOptions": {
+                  "values": false,
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/"
+                },
+                "orientation": "auto",
+                "textMode": "value",
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "wideLayout": true,
+                "showPercentChange": false
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "text"
+                      }
+                    ]
+                  },
+                  "mappings": [
+                    {
+                      "type": "value",
+                      "options": {
+                        "PRODUCAO": {
+                          "text": "PRODUÇÃO",
+                          "color": "green",
+                          "index": 0
+                        },
+                        "LIMPEZA": {
+                          "text": "LIMPEZA",
+                          "color": "purple",
+                          "index": 1
+                        }
+                      }
+                    }
+                  ]
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-7": {
+        "kind": "Panel",
+        "spec": {
+          "id": 7,
+          "title": "Última leitura há",
+          "description": "SW-08: vermelho quando o nó passa mais de 60 s sem mandar dados.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "fg3xub4ujtiwwf"
+                      },
+                      "spec": {
+                        "dataset": "htst",
+                        "editorMode": "code",
+                        "format": "table",
+                        "rawQuery": true,
+                        "rawSql": "SELECT EXTRACT(EPOCH FROM now() - max(recebido_em)) AS segundos\nFROM leituras"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.3.1",
+            "spec": {
+              "options": {
+                "reduceOptions": {
+                  "values": false,
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/"
+                },
+                "orientation": "auto",
+                "textMode": "value",
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "wideLayout": true,
+                "showPercentChange": false
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 60,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "unit": "s",
+                  "decimals": 0
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 0,
+              "y": 0,
+              "width": 6,
+              "height": 5,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-2"
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 6,
+              "y": 0,
+              "width": 6,
+              "height": 5,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-3"
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 12,
+              "y": 0,
+              "width": 4,
+              "height": 5,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-4"
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 16,
+              "y": 0,
+              "width": 4,
+              "height": 5,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-5"
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 20,
+              "y": 0,
+              "width": 4,
+              "height": 5,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-6"
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 0,
+              "y": 5,
+              "width": 20,
+              "height": 12,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-1"
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 20,
+              "y": 5,
+              "width": 4,
+              "height": 12,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-7"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "htst"
+    ],
+    "timeSettings": {
+      "timezone": "America/Sao_Paulo",
+      "from": "now-15m",
+      "to": "now",
+      "autoRefresh": "5s",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "hideTimepicker": false,
+      "fiscalYearStartMonth": 0
+    },
+    "title": "HTST - Monitoramento",
+    "variables": []
+  }
+}

@@ -40,3 +40,42 @@ Download oficial: https://www.postgresql.org/download/windows/ (instalador da ED
 | Pasta | `C:\Program Files\PostgreSQL\18` |
 
 Conferido: o pgAdmin 4 conecta no servidor "PostgreSQL 18".
+
+## Mosquitto
+
+Download oficial: https://mosquitto.org/download/ (instalado no bloco 4 do firmware; o instalador cria o serviço `mosquitto`, Automático).
+
+**10/11/2026, PC de bancada:**
+
+| Item | Valor |
+|---|---|
+| Versão | 2.1.2 |
+| Configuração | `aplicacao/mosquitto/mosquitto.conf` copiada para `C:\Program Files\mosquitto\mosquitto.conf` |
+| Persistência | `C:\mqtt\mosquitto.db` (grava ao parar o serviço e a cada 30 min) |
+| Log | `C:\mqtt\mosquitto.log` |
+| Firewall | regra "Mosquitto 1883" (entrada, TCP 1883) só no perfil **Privado**; as regras "mosquitto" do perfil Público, criadas pelo Windows na instalação, desativadas |
+| Rede | Wi-Fi como "Privada" (Configurações → Rede e Internet → Wi-Fi → propriedades) |
+
+Comandos (PowerShell como administrador):
+```powershell
+Copy-Item "<repositório>\aplicacao\mosquitto\mosquitto.conf" "C:\Program Files\mosquitto\mosquitto.conf"
+Restart-Service mosquitto
+Get-NetFirewallRule -DisplayName "mosquitto" | Disable-NetFirewallRule
+```
+
+Conferido no log depois do reinício: `htst-01` (ESP) conectado com sessão limpa (`c1`) e `nodered-htst` com sessão persistente (`c0`).
+
+## Grafana OSS
+
+Download oficial: https://grafana.com/grafana/download?edition=oss (Windows, instalador `.msi`).
+
+**11/11/2026, PC de bancada:**
+
+| Item | Valor |
+|---|---|
+| Versão | 13.3.1 (OSS) |
+| Serviço | `Grafana`, Automático |
+| Endereço | http://localhost:3000 (escuta em todas as placas de rede) |
+| Administrador | `admin`, senha trocada no primeiro acesso (fora do repositório) |
+
+Conferido: `GET /api/health` → `database: ok`, versão 13.3.1.

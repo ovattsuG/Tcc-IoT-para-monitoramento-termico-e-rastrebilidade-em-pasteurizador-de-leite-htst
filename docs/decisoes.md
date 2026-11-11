@@ -4,6 +4,7 @@
 
 | Data | Decisão | Alternativas consideradas | Motivo |
 |---|---|---|---|
+| 11/11/2026 | No dashboard, `SUBTEMP` (abaixo de 72 °C com desvio) aparece em azul, "INFORMATIVO"; vermelho e amarelo seguem a lista do SW-07 | Amarelo junto com os avisos; não destacar | A SRS não classifica a `SUBTEMP`. Não é falha (a válvula fez o certo), mas o operador precisa ver que o leite está sendo desviado |
 | 10/11/2026 | Registro sem hora (`timestamp_utc` nulo) é gravado em `leituras` com a hora nula, não em `rejeitadas` | Mandar para `rejeitadas` | A seção 7 do FRS define a hora nula como formato válido; `rejeitadas` é só para mensagem quebrada. Só ocorre se o RTC e o NTP falharem juntos, ou numa leitura isolada inválida do RTC |
 | 10/11/2026 | Backup diário (SW-13, resolve S-D3): `pg_dump` alguns minutos depois de o notebook ligar, gravado numa pasta do Google Drive para computador, na conta do dono do laticínio | Pendrive fixo; backup no próprio computador; horário fixo | O notebook desliga à tarde em horário variável; o Drive tira a cópia da fábrica sem custo e o dono já tem conta. No próprio computador não protege contra perda do disco |
 | 10/11/2026 | IP fixo configurado no próprio notebook (número alto da faixa, testado com `ping`; máscara, gateway e DNS copiados do `ipconfig`) | Reserva de IP no roteador; broker na nuvem; broker em outro microcontrolador | O roteador é da operadora, sem acesso. A nuvem exigiria TLS no firmware, internet sempre e mudança da SRS (fica como trabalho futuro); outro microcontrolador só muda o problema de máquina |
