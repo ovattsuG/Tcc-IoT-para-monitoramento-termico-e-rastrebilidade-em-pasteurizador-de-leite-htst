@@ -1,0 +1,4 @@
+{"device_id":"teste","seq":
+{"device_id":"teste","timestamp_utc":"2026-11-10T12:00:00Z","t1_c":75.4,"t2_c":33.1,"t1_valida":1,"t2_valida":1,"fdv":"DIRETO","pressao_ok":1,"modo":"PRODUCAO","alarmes":""}
+{"device_id":"teste","seq":901,"timestamp_utc":"2026-11-10T12:00:00Z","t1_c":75.4,"t2_c":33.1,"t1_valida":1,"t2_valida":1,"fdv":"ABERTO","pressao_ok":1,"modo":"PRODUCAO","alarmes":""}
+{"device_id":"teste","seq":902,"timestamp_utc":"2026-11-10T12:00:00Z","t1_c":75.4,"t2_c":33.1,"t1_valida":0,"t2_valida":1,"fdv":"DIRETO","pressao_ok":1,"modo":"PRODUCAO","alarmes":""}

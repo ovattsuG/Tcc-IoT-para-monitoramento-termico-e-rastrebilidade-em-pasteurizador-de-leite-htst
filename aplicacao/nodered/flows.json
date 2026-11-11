@@ -1,0 +1,151 @@
+[
+  {
+    "id": "a1b2c3d4e5f60001",
+    "type": "tab",
+    "label": "Recepção HTST",
+    "info": "SW-02, SW-03, SW-05: MQTT → validação → PostgreSQL. Sem regra de alarme (as regras ficam no nó)."
+  },
+  {
+    "id": "b0b0b0b0b0b00001",
+    "type": "mqtt-broker",
+    "name": "Mosquitto local",
+    "broker": "127.0.0.1",
+    "port": "1883",
+    "clientid": "nodered-htst",
+    "autoConnect": true,
+    "usetls": false,
+    "protocolVersion": "4",
+    "keepalive": "60",
+    "cleansession": false,
+    "autoUnsubscribe": false
+  },
+  {
+    "id": "c0c0c0c0c0c00001",
+    "type": "postgreSQLConfig",
+    "name": "htst (nodered)",
+    "host": "127.0.0.1",
+    "hostFieldType": "str",
+    "port": 5432,
+    "portFieldType": "num",
+    "database": "htst",
+    "databaseFieldType": "str",
+    "ssl": false,
+    "sslFieldType": "bool",
+    "applicationName": "nodered-htst",
+    "applicationNameType": "str",
+    "max": 10,
+    "maxFieldType": "num",
+    "idle": 1000,
+    "idleFieldType": "num",
+    "connectionTimeout": 10000,
+    "connectionTimeoutFieldType": "num",
+    "userFieldType": "cred",
+    "passwordFieldType": "cred"
+  },
+  {
+    "id": "d0d0d0d0d0d00001",
+    "type": "mqtt in",
+    "z": "a1b2c3d4e5f60001",
+    "name": "htst/+/leituras",
+    "topic": "htst/+/leituras",
+    "qos": "1",
+    "datatype": "utf8",
+    "broker": "b0b0b0b0b0b00001",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0,
+    "x": 140,
+    "y": 120,
+    "wires": [
+      [
+        "d0d0d0d0d0d00002"
+      ]
+    ]
+  },
+  {
+    "id": "d0d0d0d0d0d00002",
+    "type": "function",
+    "z": "a1b2c3d4e5f60001",
+    "name": "validar",
+    "func": "// Valida a mensagem do nó (formato: FRS, seção 7). Saída 1: leitura para gravar (SW-02); saída 2: rejeitada com o motivo (SW-05).\nconst bruto = msg.payload;\nconst rejeitar = motivo => [null, { params: [bruto, motivo] }];\n\nlet d;\ntry {\n    d = JSON.parse(bruto);\n} catch (e) {\n    return rejeitar('JSON malformado: ' + e.message);\n}\nif (d === null || typeof d !== 'object' || Array.isArray(d)) return rejeitar('não é um objeto JSON');\n\nconst ehBit = v => v === 0 || v === 1;\nconst ehTemp = v => v === null || (typeof v === 'number' && Number.isFinite(v));\nconst regras = [\n    ['device_id', v => typeof v === 'string' && v.length > 0],\n    ['seq', v => Number.isInteger(v) && v >= 0],\n    ['timestamp_utc', v => v === null || (typeof v === 'string' && !isNaN(Date.parse(v)))],\n    ['t1_c', ehTemp],\n    ['t2_c', ehTemp],\n    ['t1_valida', ehBit],\n    ['t2_valida', ehBit],\n    ['fdv', v => v === 'DIRETO' || v === 'DESVIO'],\n    ['pressao_ok', ehBit],\n    ['modo', v => v === 'PRODUCAO' || v === 'LIMPEZA'],\n    ['alarmes', v => typeof v === 'string'],\n];\nfor (const [campo, ok] of regras) {\n    if (!(campo in d)) return rejeitar('campo faltando: ' + campo);\n    if (!ok(d[campo])) return rejeitar('valor inválido em ' + campo + ': ' + JSON.stringify(d[campo]));\n}\n// Mesma regra do CHECK do banco: temperatura só existe se a leitura é válida.\nif ((d.t1_valida === 1) !== (d.t1_c !== null)) return rejeitar('t1_c incoerente com t1_valida');\nif ((d.t2_valida === 1) !== (d.t2_c !== null)) return rejeitar('t2_c incoerente com t2_valida');\n\nmsg.params = [d.device_id, d.seq, d.timestamp_utc, d.t1_c, d.t2_c,\n    d.t1_valida === 1, d.t2_valida === 1, d.fdv, d.pressao_ok === 1, d.modo, d.alarmes];\nreturn [msg, null];\n",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 340,
+    "y": 120,
+    "wires": [
+      [
+        "d0d0d0d0d0d00003"
+      ],
+      [
+        "d0d0d0d0d0d00004"
+      ]
+    ]
+  },
+  {
+    "id": "d0d0d0d0d0d00003",
+    "type": "postgresql",
+    "z": "a1b2c3d4e5f60001",
+    "name": "gravar leitura",
+    "query": "INSERT INTO leituras (device_id, seq, timestamp_utc, t1_c, t2_c, t1_valida, t2_valida, fdv, pressao_ok, modo, alarmes)\nVALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)\nON CONFLICT DO NOTHING;",
+    "postgreSQLConfig": "c0c0c0c0c0c00001",
+    "split": false,
+    "rowsPerMsg": 1,
+    "outputs": 1,
+    "x": 560,
+    "y": 80,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "d0d0d0d0d0d00004",
+    "type": "postgresql",
+    "z": "a1b2c3d4e5f60001",
+    "name": "gravar rejeitada",
+    "query": "INSERT INTO rejeitadas (conteudo, motivo)\nVALUES ($1, $2);",
+    "postgreSQLConfig": "c0c0c0c0c0c00001",
+    "split": false,
+    "rowsPerMsg": 1,
+    "outputs": 1,
+    "x": 560,
+    "y": 160,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "d0d0d0d0d0d00005",
+    "type": "catch",
+    "z": "a1b2c3d4e5f60001",
+    "name": "erros do fluxo",
+    "scope": null,
+    "uncaught": false,
+    "x": 150,
+    "y": 240,
+    "wires": [
+      [
+        "d0d0d0d0d0d00006"
+      ]
+    ]
+  },
+  {
+    "id": "d0d0d0d0d0d00006",
+    "type": "debug",
+    "z": "a1b2c3d4e5f60001",
+    "name": "log de erros",
+    "active": true,
+    "tosidebar": true,
+    "console": true,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "x": 360,
+    "y": 240,
+    "wires": []
+  }
+]

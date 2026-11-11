@@ -9,3 +9,6 @@ firmware/logs/*
 !firmware/logs/device-monitor-261105-025347.log
 # Log criado por engano ao rodar o monitor fora de firmware/
 /logs/
+# Node-RED: senhas criptografadas e chave nunca vão para o Git
+**/flows_cred.json
+**/settings.js
