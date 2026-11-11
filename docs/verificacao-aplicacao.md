@@ -16,7 +16,7 @@ Status possíveis: Pendente · Implementado – aguardando teste · Aprovado · 
 | SW-08 | Nó parado: vermelho em ≤ 70 s | Desligar o nó | Aprovado | 11/11/2026 | Relato do autor: ESP desligado, painel ficou vermelho dentro de 70 s; tempo não anotado. Painel "Última leitura há" (`now() - max(recebido_em)`), vermelho a partir de 60 s |
 | SW-09 | Inválidas como lacuna; alarmes como faixas | Cenários 5 e 6 | Aprovado | 11/11/2026 | Relato do autor (11/11/2026): resistor da T1 e da T2 desligados na bancada; no Relatório, lacuna na linha (sem cair a zero), faixa vermelha FALHA_T1 e amarela FALHA_T2 no mesmo trecho, ambas na tabela Ocorrências. Gráficos com `spanNulls: false`; faixas por consulta de anotação com início e fim |
 | SW-10 | Relatório do período, CSV e PDF | Gerar o relatório de um dia | Aprovado | 11/11/2026 | Relatório de 11/11/2026 gerado em CSV (Inspect → Data → Download CSV) e PDF (Ctrl+P). CSV com as colunas do datalog da fábrica: `Data,Horário,Pasteurizacao,Saida`, 1ª linha `11.11.26, 00:00:00, 23.4, 56.9`, uma linha por segundo, começando à 00:00:00 de Brasília |
-| SW-11 | Sem login não abre | Abrir sem login | Pendente | | |
+| SW-11 | Sem login não abre | Abrir sem login | Aprovado | 11/11/2026 | Grafana na porta 3002 sem acesso anônimo: `/api/search` sem login → 401. Relato do autor: em janela anônima o Grafana pede login; entrou com o usuário do operador (papel Editor, para o SW-12). Um usuário só (uma pessoa opera); `admin` reservado para administração |
 | SW-12 | Anotação "alarme visto" com o nome do usuário | Criar anotação | Pendente | | |
 | SW-13 | Backup diário restaurável em outra máquina | Restaurar e conferir | Pendente | | |
 | SW-14 | Grava em UTC, mostra em Brasília | Evento de 13:00 UTC aparece às 10:00 | Pendente | | |
