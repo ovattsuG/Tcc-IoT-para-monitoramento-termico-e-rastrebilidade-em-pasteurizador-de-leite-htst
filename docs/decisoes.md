@@ -4,6 +4,7 @@
 
 | Data | Decisão | Alternativas consideradas | Motivo |
 |---|---|---|---|
+| 13/11/2026 | FW-11 aceito com 1 h 32 min sem broker (`Stop-Service mosquitto`), e não as 24 h do critério; a ressalva fica na matriz e na monografia | Repetir com 24 h sem broker | Prazo de entrega (17/11) e PC de casa compartilhado. O teste exercitou o mecanismo inteiro (5851 reenviadas, reinício no meio, sem perda); 24 h só aumenta o volume (~86 mil mensagens, ~13 MB no cartão, ~73 min de reenvio) |
 | 11/11/2026 | Grafana: um usuário para o operador, papel Editor; `admin` só para administração | Usar o `admin` no dia a dia; papel Viewer | Uma pessoa opera. Editor é o mínimo que cria anotação (SW-12); a senha do admin (conexão com o banco, usuários) não circula na fábrica e a anotação mostra o nome do operador |
 | 11/11/2026 | Dois dashboards (Monitoramento e Relatório), ligados por links da tag `htst` | Um dashboard só | Períodos e atualização diferentes (15 min a cada 5 s × dia inteiro sem atualização): junto, o banco recalcularia o dia a cada 5 s e escolher "ontem" tiraria o ao vivo do ar. A SRS separa SW-06 e SW-10 |
 | 11/11/2026 | Relatório: tabela "Leituras (datalog)" no formato do datalog atual da fábrica (`Data,Horário,Pasteurizacao,Saida`, hora de Brasília); CSV pela exportação do painel | CSV gerado automaticamente todo dia (Agendador + `psql`) | A SRS pede exportação pelo painel; o arquivo diário seria requisito novo. O histórico fica no banco e no backup (SW-13), o pendrive deixa de ser o registro |
