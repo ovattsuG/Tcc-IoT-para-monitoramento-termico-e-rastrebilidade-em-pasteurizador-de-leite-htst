@@ -33,6 +33,7 @@ Sequencia sequencia(0, BLOCO_SEQ);   // trocada no setup() pelo valor da NVS
 RTC_DS3231 rtc;
 bool rtcPresente = false;
 bool horaOk = false;   // FW-08: false = RTC não responde ou perdeu a hora; o registro sai sem hora
+bool relogioEspOk = false;   // NTP acertou o relógio interno do ESP: reserva quando o RTC falha
 bool wdtPendente = false;   // FW-13: o boot veio de um watchdog e o 1º registro ainda não saiu
 
 // FW-08: o SNTP chama isto na tarefa de rede, não no loop(); por isso só marca, e o loop() grava no RTC.
@@ -135,12 +136,13 @@ void loop() {
 
   if (ntpSincronizou) {
     ntpSincronizou = false;
+    relogioEspOk = true;
     if (rtcPresente) {
       rtc.adjust(DateTime((uint32_t)time(nullptr)));
       horaOk = true;
       Serial.printf("[%lu ms] RTC ajustado por NTP: %sZ\n", millis(), rtc.now().timestamp().c_str());
     } else {
-      Serial.printf("[%lu ms] NTP ok, mas RTC ausente: hora nao gravada\n", millis());
+      Serial.printf("[%lu ms] NTP ok, mas RTC ausente: usando o relogio do ESP\n", millis());
     }
   }
 
@@ -213,6 +215,12 @@ void loop() {
       DateTime agoraRtc = rtc.now();
       if (agoraRtc.isValid()) snprintf(hora, sizeof(hora), "%sZ", agoraRtc.timestamp().c_str());
       else Serial.println("RTC: leitura invalida (I2C); registro sem hora");
+    }
+    // Reserva: RTC ausente ou com leitura inválida, mas o NTP já acertou o relógio do ESP (decisão de 15/11/2026).
+    // Some num reinício sem rede; por isso o RTC continua sendo a fonte principal.
+    if (hora[0] == '\0' && relogioEspOk) {
+      time_t t = time(nullptr);
+      strftime(hora, sizeof(hora), "%Y-%m-%dT%H:%M:%SZ", gmtime(&t));
     }
 
     // Seção 7: leitura inválida sai sem valor (FW-07); a validade vem do alarme, a mesma regra da torre.
