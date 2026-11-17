@@ -10,6 +10,7 @@ void imprimirConfiguracao(const Configuracao& c) {
   Serial.printf("T_FDV=%.3f s  TEMPO_LIMPEZA=%.0f s  PERIODO_REGISTRO=%.3f s  FDV_DESVIO=%u\n",
                 c.alarme.tFdvMs / 1000.0, c.alarme.tempoLimpezaMs / 1000.0,
                 c.periodoRegistroMs / 1000.0, c.fdvNivelDesvio);
+  Serial.printf("OFFSET_T1=%.1f C  OFFSET_T2=%.1f C\n", c.offsetT1C, c.offsetT2C);
 }
 
 static const char* textoErro(ResultadoComando r) {

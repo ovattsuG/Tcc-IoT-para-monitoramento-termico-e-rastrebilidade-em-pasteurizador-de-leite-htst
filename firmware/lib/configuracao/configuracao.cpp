@@ -15,6 +15,8 @@ Configuracao configuracaoPadrao() {
   cfg.alarme.tempoLimpezaMs = 4UL * 60 * 60 * 1000;
   cfg.periodoRegistroMs = 1000;
   cfg.fdvNivelDesvio = 0;   // D1 provisório (06/11/2026): sensor NPN vê metal em DESVIO → pino em 0
+  cfg.offsetT1C = 0.0f;
+  cfg.offsetT2C = 0.0f;
   return cfg;
 }
 
@@ -23,7 +25,10 @@ bool configuracaoValida(const Configuracao& c) {
          isfinite(c.alarme.faixaMinC) && isfinite(c.alarme.faixaMaxC) &&
          c.alarme.faixaMinC < c.alarme.faixaMaxC &&
          c.alarme.tFdvMs > 0 && c.alarme.tempoLimpezaMs > 0 && c.periodoRegistroMs > 0 &&
-         c.fdvNivelDesvio <= 1;
+         c.fdvNivelDesvio <= 1 &&
+         // ±10 °C: acima disso não é ajuste, é sensor ou ligação errada (e um -50 digitado errado esconderia o alarme)
+         isfinite(c.offsetT1C) && fabsf(c.offsetT1C) <= 10.0f &&
+         isfinite(c.offsetT2C) && fabsf(c.offsetT2C) <= 10.0f;
 }
 
 // Segundos digitados → ms. Recusa negativo e o que não cabe em uint32_t (~49 dias).
@@ -49,6 +54,8 @@ ResultadoComando aplicarSet(const char* linha, Configuracao& cfg) {
   else if (strcmp(nome, "HIST") == 0)             nova.alarme.hist = v;
   else if (strcmp(nome, "FAIXA_MIN") == 0)        nova.alarme.faixaMinC = v;
   else if (strcmp(nome, "FAIXA_MAX") == 0)        nova.alarme.faixaMaxC = v;
+  else if (strcmp(nome, "OFFSET_T1") == 0)        nova.offsetT1C = v;
+  else if (strcmp(nome, "OFFSET_T2") == 0)        nova.offsetT2C = v;
   else if (strcmp(nome, "T_FDV") == 0)            convertido = segundosParaMs(v, nova.alarme.tFdvMs);
   else if (strcmp(nome, "TEMPO_LIMPEZA") == 0)    convertido = segundosParaMs(v, nova.alarme.tempoLimpezaMs);
   else if (strcmp(nome, "PERIODO_REGISTRO") == 0) convertido = segundosParaMs(v, nova.periodoRegistroMs);

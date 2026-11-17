@@ -22,7 +22,7 @@
 #include <WiFi.h>
 #include <esp_sntp.h>
 #include <esp_task_wdt.h>
-#include "segredos.h"   // fora do Git; modelo em include/segredos.exemplo.h
+#include "segredos.h"
 
 Ticker tickerEntradas;
 Configuracao cfg = configuracaoPadrao();
@@ -165,6 +165,9 @@ void loop() {
     marcaLeituraMs += PERIODO_LEITURA_MS;
     t1 = sensorT1.ler();
     t2 = sensorT2.ler();
+    // Offset antes de tudo: faixa válida, alarme, SD e MQTT veem a mesma temperatura corrigida.
+    t1.celsius += cfg.offsetT1C;
+    t2.celsius += cfg.offsetT2C;
 
     Entradas e{};   // {} zera tudo: campo esquecido vira false/0, nunca lixo
     e.sdFalha = sdComFalha();

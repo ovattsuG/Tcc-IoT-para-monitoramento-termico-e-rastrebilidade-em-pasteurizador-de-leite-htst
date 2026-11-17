@@ -8,6 +8,8 @@ struct Configuracao {
   Parametros alarme;
   uint32_t periodoRegistroMs;   // PERIODO_REGISTRO
   uint8_t fdvNivelDesvio;       // D1: nível do pino da FDV em DESVIO (0 ou 1)
+  float offsetT1C;              // OFFSET_T1: somado à leitura (fora da seção 4; decisão de 15/11/2026)
+  float offsetT2C;              // OFFSET_T2
 };
 
 enum class ResultadoComando { OK, FORMATO_INVALIDO, NOME_DESCONHECIDO, VALOR_INVALIDO };

@@ -19,6 +19,20 @@ void test_padrao_igual_a_spec() {
   TEST_ASSERT_TRUE(configuracaoValida(c));
 }
 
+// Offset: padrão 0; aceita ±10 °C; fora disso não altera
+void test_offset() {
+  Configuracao c = configuracaoPadrao();
+  TEST_ASSERT_EQUAL_FLOAT(0.0f, c.offsetT1C);
+  TEST_ASSERT_EQUAL_FLOAT(0.0f, c.offsetT2C);
+  TEST_ASSERT_TRUE(aplicarSet("set OFFSET_T2 -5.0", c) == ResultadoComando::OK);
+  TEST_ASSERT_EQUAL_FLOAT(-5.0f, c.offsetT2C);
+  TEST_ASSERT_TRUE(aplicarSet("set OFFSET_T1 10", c) == ResultadoComando::OK);
+  TEST_ASSERT_TRUE(aplicarSet("set OFFSET_T1 10.1", c) == ResultadoComando::VALOR_INVALIDO);
+  TEST_ASSERT_TRUE(aplicarSet("set OFFSET_T2 -50", c) == ResultadoComando::VALOR_INVALIDO);
+  TEST_ASSERT_EQUAL_FLOAT(10.0f, c.offsetT1C);
+  TEST_ASSERT_EQUAL_FLOAT(-5.0f, c.offsetT2C);
+}
+
 void test_set_t_min() {
   Configuracao c = configuracaoPadrao();
   TEST_ASSERT_TRUE(aplicarSet("set T_MIN 72.5", c) == ResultadoComando::OK);
@@ -90,5 +104,6 @@ int main() {
   RUN_TEST(test_formato_errado);
   RUN_TEST(test_valores_sem_sentido_nao_alteram);
   RUN_TEST(test_set_fdv_desvio);
+  RUN_TEST(test_offset);
   return UNITY_END();
 }

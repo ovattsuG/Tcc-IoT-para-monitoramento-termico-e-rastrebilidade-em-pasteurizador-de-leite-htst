@@ -10,5 +10,7 @@
 			"path": "bancada/gerador-pulsos"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"powershell.cwd": "edge-htst"
+	}
 }
