@@ -131,6 +131,8 @@ try {
     $texto = Get-Content $arq.FullName -Raw -Encoding UTF8
     $nome = ($texto | ConvertFrom-Json).metadata.name
     if (-not (Existe "$base/$nome")) { Api POST $base $texto | Out-Null; Write-Host "dashboard $($arq.Name) importado" }
+    # A API v2 não dá a permissão padrão (Editor edita, Viewer vê): sem isto só o admin enxerga o dashboard.
+    Api POST "/api/dashboards/uid/$nome/permissions" '{"items":[{"role":"Viewer","permission":1},{"role":"Editor","permission":2}]}' | Out-Null
   }
 
   if (-not (Existe "/api/users/lookup?loginOrEmail=$loginOperador")) {
